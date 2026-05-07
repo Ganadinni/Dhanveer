@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 // GET — list all discovery search configs
 export async function GET() {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const searches = await db.discoverySearch.findMany({
@@ -20,8 +20,8 @@ export async function GET() {
 // POST — create a new search config
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { label, cities, query, tagsToApply } = await req.json();

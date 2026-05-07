@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   void req;
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const leads = await db.lead.findMany({ select: { id: true } });
   let scored = 0;
