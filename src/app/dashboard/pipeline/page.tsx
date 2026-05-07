@@ -1,18 +1,18 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Header } from "@/components/layout/Header";
 import { PipelineClient } from "./PipelineClient";
 
 export default async function PipelinePage() {
   const session = await auth();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN";
 
   const leads = await db.lead.findMany({
     where: {
       status: { notIn: ["WON", "LOST"] },
-      ...(isAdmin ? {} : { assignedToId: session?.user?.id }),
+      ...(isAdmin ? {} : { assignedToId: session?.id }),
     },
     select: {
       id: true,
@@ -27,8 +27,8 @@ export default async function PipelinePage() {
     orderBy: { updatedAt: "desc" },
   });
 
-  const wonWhere = isAdmin ? { status: "WON" as const } : { status: "WON" as const, assignedToId: session?.user?.id };
-  const lostWhere = isAdmin ? { status: "LOST" as const } : { status: "LOST" as const, assignedToId: session?.user?.id };
+  const wonWhere = isAdmin ? { status: "WON" as const } : { status: "WON" as const, assignedToId: session?.id };
+  const lostWhere = isAdmin ? { status: "LOST" as const } : { status: "LOST" as const, assignedToId: session?.id };
   const won = await db.lead.count({ where: wonWhere });
   const lost = await db.lead.count({ where: lostWhere });
 

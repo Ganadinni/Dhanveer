@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { Header } from "@/components/layout/Header";
 import { db } from "@/lib/db";
 import Link from "next/link";
@@ -17,10 +17,10 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function LeadsPage() {
   const session = await auth();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN";
 
   const leads = await db.lead.findMany({
-    where: isAdmin ? {} : { assignedToId: session?.user?.id },
+    where: isAdmin ? {} : { assignedToId: session?.id },
     include: { assignedTo: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
     take: 100,

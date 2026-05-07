@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const filter = req.nextUrl.searchParams.get("filter"); // today | overdue | upcoming | all
   const leadId = req.nextUrl.searchParams.get("leadId");
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { title, type, dueDate, notes, leadId } = body;
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       dueDate: dueDate ? new Date(dueDate) : null,
       notes: notes ?? null,
       leadId: leadId ?? null,
-      assignedToId: session.user.id,
+      assignedToId: session.id,
     },
     include: {
       lead: { select: { id: true, businessName: true } },

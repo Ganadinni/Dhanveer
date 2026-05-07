@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
@@ -10,7 +10,7 @@ import { LeadDetailClient } from "./LeadDetailClient";
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN";
 
   const [lead, users] = await Promise.all([
     db.lead.findUnique({

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -54,7 +54,7 @@ function extractPincode(components: AddressComponent[] = []): string | null {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Google Places API key not configured" }, { status: 503 });
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
           pincode: extractPincode(details.address_components),
           source: "GOOGLE_PLACES",
           googlePlaceId: placeId,
-          assignedToId: session.user.id,
+          assignedToId: session.id,
         },
       });
 

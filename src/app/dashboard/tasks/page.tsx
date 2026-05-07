@@ -1,18 +1,18 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Header } from "@/components/layout/Header";
 import { TasksClient } from "./TasksClient";
 
 export default async function TasksPage() {
   const session = await auth();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.role === "ADMIN";
 
   const tasks = await db.task.findMany({
     where: {
       completed: false,
-      ...(isAdmin ? {} : { assignedToId: session?.user?.id }),
+      ...(isAdmin ? {} : { assignedToId: session?.id }),
     },
     include: {
       lead: { select: { id: true, businessName: true } },

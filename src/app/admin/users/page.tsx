@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { Header } from "@/components/layout/Header";
 import { UsersClient } from "./UsersClient";
@@ -26,7 +26,7 @@ export default async function UsersPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <UsersClient
           initialUsers={JSON.parse(JSON.stringify(users))}
-          currentUserId={session!.user.id}
+          currentUserId={session!.id}
         />
       </div>
     </div>

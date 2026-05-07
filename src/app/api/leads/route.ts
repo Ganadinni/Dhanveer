@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
@@ -11,11 +11,11 @@ export async function GET(req: NextRequest) {
   const city = searchParams.get("city") ?? undefined;
   const search = searchParams.get("search") ?? undefined;
 
-  const isSales = session.user.role === "SALES";
+  const isSales = session.role === "SALES";
 
   const leads = await db.lead.findMany({
     where: {
-      ...(isSales && { assignedToId: session.user.id }),
+      ...(isSales && { assignedToId: session.id }),
       ...(status && { status: status as never }),
       ...(city && { city }),
       ...(search && {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       pincode,
       source: source ?? "MANUAL",
       notes,
-      assignedToId: session.user?.id ?? undefined,
+      assignedToId: session.id ?? undefined,
     },
   });
 

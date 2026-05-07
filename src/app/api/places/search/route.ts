@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession as auth } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
