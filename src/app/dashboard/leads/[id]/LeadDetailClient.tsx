@@ -3,6 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+type TaskType = "CALL" | "FOLLOW_UP" | "MEETING" | "EMAIL" | "OTHER";
+const TASK_TYPE_ICONS: Record<TaskType, string> = {
+  CALL: "📞", FOLLOW_UP: "🔔", MEETING: "🤝", EMAIL: "✉️", OTHER: "📌",
+};
+const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  CALL: "Call", FOLLOW_UP: "Follow-up", MEETING: "Meeting", EMAIL: "Email", OTHER: "Other",
+};
+
+interface Task {
+  id: string;
+  title: string;
+  type: TaskType;
+  dueDate: string | null;
+  completed: boolean;
+  notes: string | null;
+}
+
 const STATUS_OPTIONS = ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL_SENT", "NEGOTIATION", "WON", "LOST"];
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-50 text-blue-700",
@@ -29,6 +46,7 @@ interface Lead {
   notes?: string | null;
   assignedTo?: { name: string } | null;
   activities: { id: string; type: string; note?: string | null; createdAt: string }[];
+  tasks: Task[];
 }
 
 export function LeadDetailClient({ lead }: { lead: Lead }) {
@@ -38,6 +56,38 @@ export function LeadDetailClient({ lead }: { lead: Lead }) {
   const [note, setNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [activities, setActivities] = useState(lead.activities);
+  const [tasks, setTasks] = useState<Task[]>(lead.tasks ?? []);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskType, setTaskType] = useState<TaskType>("FOLLOW_UP");
+  const [taskDue, setTaskDue] = useState("");
+  const [addingTask, setAddingTask] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+
+  async function addTask() {
+    if (!taskTitle.trim()) return;
+    setAddingTask(true);
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: taskTitle, type: taskType, dueDate: taskDue || null, leadId: lead.id }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      setTasks((prev) => [json.task, ...prev]);
+      setTaskTitle(""); setTaskDue(""); setTaskType("FOLLOW_UP");
+      setShowTaskForm(false);
+    }
+    setAddingTask(false);
+  }
+
+  async function completeTask(id: string) {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: true }),
+    });
+  }
 
   async function updateStatus(newStatus: string) {
     setSaving(true);
@@ -124,6 +174,77 @@ export function LeadDetailClient({ lead }: { lead: Lead }) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Tasks */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-medium text-slate-700">Tasks</p>
+          <button onClick={() => setShowTaskForm((v) => !v)} className="text-xs text-green-600 hover:text-green-700 font-medium">
+            + Add task
+          </button>
+        </div>
+
+        {showTaskForm && (
+          <div className="mb-4 space-y-2 p-3 bg-slate-50 rounded-lg">
+            <input
+              autoFocus
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              placeholder="Task title…"
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <div className="flex gap-2">
+              <select
+                value={taskType}
+                onChange={(e) => setTaskType(e.target.value as TaskType)}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                {(Object.keys(TASK_TYPE_LABELS) as TaskType[]).map((k) => (
+                  <option key={k} value={k}>{TASK_TYPE_ICONS[k]} {TASK_TYPE_LABELS[k]}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={taskDue}
+                onChange={(e) => setTaskDue(e.target.value)}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={addTask}
+                disabled={addingTask || !taskTitle.trim()}
+                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg"
+              >
+                {addingTask ? "Saving…" : "Save Task"}
+              </button>
+              <button onClick={() => setShowTaskForm(false)} className="text-sm text-slate-400 hover:text-slate-600 px-3">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {tasks.length === 0 && !showTaskForm ? (
+          <p className="text-sm text-slate-400">No tasks yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {tasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 text-sm group">
+                <button
+                  onClick={() => completeTask(t.id)}
+                  className="w-4 h-4 rounded-full border-2 border-slate-300 hover:border-green-500 hover:bg-green-50 shrink-0"
+                />
+                <span className="text-slate-500">{TASK_TYPE_ICONS[t.type]}</span>
+                <span className="flex-1 text-slate-800">{t.title}</span>
+                {t.dueDate && (
+                  <span className="text-xs text-slate-400">
+                    {new Date(t.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Activity */}
