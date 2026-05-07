@@ -24,6 +24,7 @@ enum LeadStatus {
 
 enum LeadSource {
   GOOGLE_PLACES
+  SOCIAL_MEDIA
   WHATSAPP
   MANUAL
   REFERRAL
@@ -234,6 +235,25 @@ model DiscoverySearch {
   updatedAt       DateTime  @updatedAt
 
   @@map("discovery_searches")
+}
+
+// ─── Social Media Monitor ─────────────────────────────────────────────────────
+
+model SocialMonitor {
+  id             String    @id @default(cuid())
+  label          String
+  keywords       String[]  // hashtags / keywords to search
+  platforms      String[]  // "instagram" | "linkedin" | "youtube" | "facebook"
+  cities         String[]
+  tagsToApply    String[]  @default([])
+  isActive       Boolean   @default(true)
+  lastRunAt      DateTime?
+  lastFoundCount Int       @default(0)
+  totalAdded     Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("social_monitors")
 }
 
 // ─── WhatsApp Sequences ───────────────────────────────────────────────────────
