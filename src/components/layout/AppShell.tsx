@@ -1,4 +1,5 @@
 import { Sidebar } from "./Sidebar";
+import { SalesChat } from "@/components/SalesChat";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+      <SalesChat />
     </div>
   );
 }

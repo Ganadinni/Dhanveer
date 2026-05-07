@@ -160,43 +160,44 @@ async function generateWithClaude(
     })
     .join("\n\n");
 
-  const systemPrompt = `You are a senior sales executive at The Tea Planet — India's First Bubble Tea Manufacturer (Est. 2011, Hyderabad).
+  const systemPrompt = `You are a senior sales professional at The Tea Planet who has personally visited and won over hundreds of F&B businesses across India. You understand their world — the pressure to keep customers coming back, menu fatigue, the constant search for something that sells itself.
 
-Key facts to weave naturally into pitches:
-- India's First and Most Trusted Bubble Tea Manufacturer since 2011
-- 200%+ gross margins on every drink served
-- "Go Live in 7 Days" — full support, training, recipes
-- "Stop comparing price per kg. Compare cost per cup." (our USP positioning)
-- Certifications: FSSC 22000, FSSAI, HALAL certified, APEDA, FDA Registered, Tea Board India, Coffee Board
-- 8 dedicated production lines in Hyderabad
-- Direct tea sourcing: Assam, West Bengal, Tamil Nadu, Kerala, Sri Lanka
-- 500+ partners across cafes, hotels, QSRs, cloud kitchens
-- 200+ recipes, no special equipment needed
-- Phone: +91-8886277713 | Website: www.theteaplanet.com
+About The Tea Planet:
+- India's first bubble tea manufacturer, since 2011, based in Hyderabad
+- 200%+ gross margins — a cup that costs 12 rupees to make sells for 100-150
+- No new equipment needed, live in 7 days, full recipe support
+- FSSC 22000, FSSAI, HALAL, APEDA certified — safe to say yes to any client
+- 500+ partners: from small cafes to five-star hotels to QSR chains
+- Direct tea sourcing from Assam, Darjeeling, Kerala, Sri Lanka
+- Phone: +91-8886277713 | www.theteaplanet.com
 
-Write in a warm, professional Indian business tone. Be specific to the business type. Never sound generic.`;
+Writing rules — follow without exception:
+- No markdown. No asterisks, no hashtags, no dashes as bullets. Plain flowing text only.
+- No emojis in emails. WhatsApp can have one or two if they fit the tone — nothing celebratory or salesy.
+- Never open with "I hope this email finds you well" or any variation.
+- Don't name the product first — describe what changes for their customer and their margins.
+- Create a specific tension: what gap in their menu are they sitting on? What are similar businesses in their city already doing?
+- Sound like someone who walked into their place, looked around, and formed a specific opinion.
+- Email: three tight paragraphs. Subject line should read like a thought, not an ad. No sign-off clichés.
+- WhatsApp: under 140 words. Peer-to-peer, not pitch-to-prospect. One specific observation, one easy ask.
+- Close with something concrete and low-effort for them: "I can courier three samples to your place this week, no paperwork."`;
 
-  const userPrompt = `Write a personalised sales pitch for this lead:
+  const userPrompt = `Write a personalised outreach for this F&B business:
 
 Business: ${lead.businessName}
-Owner: ${ownerName}${location ? `\nLocation: ${location}` : ""}${lead.notes ? `\nNotes: ${lead.notes}` : ""}
+Owner: ${ownerName}${location ? `\nLocation: ${location}` : ""}${lead.notes ? `\nContext: ${lead.notes}` : ""}
 
-OUR FULL PRODUCT CATALOG (choose the 4 best matches for this specific business):
+Our product catalog — pick the 4 that genuinely fit this business, not the most popular ones:
 ${catalogText}
 
-Generate THREE things:
-1. Select the 4 most relevant products for this business and list them with a specific reason why each fits them.
-2. A professional EMAIL PITCH — subject line + email body. Reference their specific business type, mention 2–3 of the selected products by exact name with their key benefit. Close with a free sample kit offer.
-3. A WHATSAPP MESSAGE — casual, punchy, under 180 words. Use *bold* for emphasis, 3–4 emojis, end with "Reply YES for a free sample kit!". Address them as ${firstName}.
-
-Respond ONLY with valid JSON in this exact structure (no markdown, no explanation outside JSON):
+Respond ONLY with valid JSON, no markdown, no text outside the JSON:
 {
   "selectedProducts": [
-    { "name": "exact product name from catalog", "sku": "sku or null", "category": "category name", "reason": "specific reason for this business" }
+    { "name": "exact name from catalog above", "sku": "sku or null", "category": "category name", "reason": "one specific sentence on why this fits their business" }
   ],
-  "subject": "email subject line here",
-  "pitch": "full email body here (use \\n for line breaks)",
-  "whatsappMessage": "whatsapp message here (use \\n for line breaks)"
+  "subject": "email subject — reads like a thought, not an ad",
+  "pitch": "email body — three paragraphs, plain text, no formatting (use \\n for line breaks)",
+  "whatsappMessage": "whatsapp message — peer tone, under 140 words, 0-1 emoji (use \\n for line breaks)"
 }`;
 
   const message = await client.messages.create({
@@ -242,52 +243,29 @@ function generateFromTemplate(lead: Lead, recommended: RecommendedProduct[]): Pi
   const location = [lead.city, lead.state].filter(Boolean).join(", ");
 
   const productLines = recommended
-    .map((p, i) => `${i + 1}. **${p.name}**${p.sku ? ` (${p.sku})` : ""}\n   ${p.reason}${p.dealerPrice ? `\n   Dealer price: ₹${p.dealerPrice}${p.moq ? ` · MOQ: ${p.moq}` : ""}` : ""}`)
-    .join("\n\n");
+    .map((p) => `${p.name}${p.sku ? ` (${p.sku})` : ""} — ${p.reason}${p.dealerPrice ? ` Dealer: Rs.${p.dealerPrice}${p.moq ? `, MOQ: ${p.moq}` : ""}` : ""}`)
+    .join("\n");
 
   const pitch = `Dear ${firstName},
 
-Greetings from **The Tea Planet** — India's First Bubble Tea Manufacturer (Est. 2011)!
+The beverage category is quietly becoming the highest-margin line on any F&B menu — and most businesses in ${location || "your area"} are only scratching the surface of what's possible. At The Tea Planet, we've been helping cafes and restaurants like yours add 200%+ margin drinks to their menu since 2011, without any new equipment or a long ramp-up time.
 
-We noticed that **${lead.businessName}**${location ? ` in ${location}` : ""} is in the F&B/hospitality space, and we believe our products can add significant value to your menu and margins.
+What we'd suggest for ${lead.businessName}: ${productLines}
 
-**Why The Tea Planet?**
-- India's First and Most Trusted Bubble Tea Manufacturer since 2011
-- **200%+ gross margins** on every drink you serve
-- Launch a complete beverage menu in just **7 days** — we handle training and setup
-- No special equipment needed — just add water and serve
-- Certifications: FSSC 22000 · FSSAI · HALAL · APEDA · FDA Registered
+Each of these can be ready to serve within a week. The cost per cup runs between Rs.8 and Rs.15. The selling price is yours to set — most of our partners charge Rs.80 to Rs.150. We'll courier a sample kit to your address this week with no paperwork. If you like what you taste, we go from there.
 
-**Products we recommend for ${lead.businessName}:**
+The Tea Planet | +91-8886277713 | www.theteaplanet.com`;
 
-${productLines}
+  const subject = `A beverage idea for ${lead.businessName}`;
 
-💡 **Stop comparing price per kg. Start comparing cost per cup.**
-Our premixes deliver a cost per cup of ₹8–15, while you sell at ₹80–150.
+  const prodList = recommended.slice(0, 3).map((p) => p.name).join(", ");
+  const whatsappMessage = `Hi ${firstName},
 
-We'd love to arrange a **free sample kit** — no commitment, just taste the difference!
+Came across ${lead.businessName}${location ? ` in ${location}` : ""} and wanted to share something. We work with cafes and restaurants on adding high-margin beverages to their menu — things like ${prodList}. Cost per cup is under Rs.15, selling price is typically Rs.80-150.
 
-Warm regards,
-The Tea Planet Sales Team
-📞 +91-8886277713 | 🌐 www.theteaplanet.com`;
+No equipment needed, ready to serve in a week. Happy to courier samples to your place.
 
-  const subject = `Free Sample Kit for ${lead.businessName} — 200%+ Margin Beverages | The Tea Planet`;
-
-  const prodList = recommended.slice(0, 3).map((p) => `• ${p.name}`).join("\n");
-  const whatsappMessage = `Hi ${firstName}! 👋
-
-I'm reaching out from *The Tea Planet* — India's First Bubble Tea Manufacturer (Est. 2011) 🏆
-
-We help businesses like *${lead.businessName}*${location ? ` in ${location}` : ""} launch high-margin beverage menus in just *7 days*!
-
-${prodList}
-
-💰 *200%+ gross margin* on every cup · No special equipment needed
-✅ FSSC 22000 · FSSAI · HALAL certified
-
-Reply *YES* for a FREE sample kit delivered to your door! 🚀
-
-_The Tea Planet | +91-8886277713 | www.theteaplanet.com_`;
+The Tea Planet — +91-8886277713`;
 
   return { subject, pitch, recommendedProducts: recommended, whatsappMessage };
 }
