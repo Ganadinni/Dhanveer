@@ -59,6 +59,14 @@ interface Lead {
   assignedToId?: string | null;
   activities: Activity[];
   tasks: Task[];
+  score?: { score: number; tier: string; fitScore: number; engageScore: number; intentScore: number; reasoning: string | null } | null;
+}
+
+interface PitchResult {
+  subject: string;
+  pitch: string;
+  whatsappMessage: string;
+  recommendedProducts: { id: string; name: string; sku: string | null; category: string; reason: string; mrp: number | null; dealerPrice: number | null; moq: string | null }[];
 }
 
 interface UserOption { id: string; name: string; role: string; }
@@ -86,6 +94,34 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
   const [waMessage, setWaMessage] = useState("");
   const [sendingWa, setSendingWa] = useState(false);
   const [waError, setWaError] = useState("");
+
+  // AI Pitch state
+  const [pitch, setPitch] = useState<PitchResult | null>(null);
+  const [generatingPitch, setGeneratingPitch] = useState(false);
+  const [pitchOpen, setPitchOpen] = useState(false);
+  const [pitchTab, setPitchTab] = useState<"email" | "whatsapp" | "products">("email");
+  const [leadScore, setLeadScore] = useState(lead.score ?? null);
+
+  async function generatePitch() {
+    setGeneratingPitch(true);
+    setPitchOpen(true);
+    const res = await fetch("/api/ai/pitch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId: lead.id }),
+    });
+    if (res.ok) setPitch(await res.json());
+    setGeneratingPitch(false);
+  }
+
+  async function refreshScore() {
+    const res = await fetch("/api/ai/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId: lead.id }),
+    });
+    if (res.ok) setLeadScore(await res.json());
+  }
 
   async function addTask() {
     if (!taskTitle.trim()) return;
@@ -255,6 +291,156 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* AI Pitch Builder */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-indigo-50">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🤖</span>
+            <p className="text-sm font-medium text-slate-800">AI Sales Intelligence</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {leadScore && (
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                  leadScore.tier === "HOT" ? "bg-red-100 text-red-700" :
+                  leadScore.tier === "WARM" ? "bg-orange-100 text-orange-700" :
+                  "bg-slate-100 text-slate-600"
+                }`}>
+                  {leadScore.tier === "HOT" ? "🔥" : leadScore.tier === "WARM" ? "☀️" : "❄️"} {leadScore.tier}
+                </span>
+                <span className="text-xs text-slate-400 font-mono">{leadScore.score}/100</span>
+              </div>
+            )}
+            <button
+              onClick={refreshScore}
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              Score
+            </button>
+            <button
+              onClick={generatePitch}
+              disabled={generatingPitch}
+              className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors"
+            >
+              {generatingPitch ? "Generating…" : "Generate Pitch"}
+            </button>
+          </div>
+        </div>
+
+        {leadScore?.reasoning && (
+          <div className="px-5 py-3 bg-slate-50 border-b border-slate-100">
+            <p className="text-xs text-slate-500">
+              <span className="font-medium">Score reasoning:</span> {leadScore.reasoning}
+            </p>
+            <div className="flex gap-4 mt-1.5 text-xs text-slate-400">
+              <span>Fit: <b className="text-slate-600">{leadScore.fitScore}</b></span>
+              <span>Engagement: <b className="text-slate-600">{leadScore.engageScore}</b></span>
+              <span>Intent: <b className="text-slate-600">{leadScore.intentScore}</b></span>
+            </div>
+          </div>
+        )}
+
+        {pitchOpen && (
+          <div className="p-5">
+            {generatingPitch ? (
+              <div className="flex items-center gap-3 py-6 justify-center">
+                <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-slate-500">Analysing lead and building pitch…</p>
+              </div>
+            ) : pitch ? (
+              <>
+                <div className="flex gap-1 mb-4 border-b border-slate-100">
+                  {(["email", "whatsapp", "products"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setPitchTab(tab)}
+                      className={`px-4 py-2 text-xs font-medium capitalize border-b-2 transition-colors -mb-px ${
+                        pitchTab === tab ? "border-violet-500 text-violet-700" : "border-transparent text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      {tab === "email" ? "📧 Email Pitch" : tab === "whatsapp" ? "💬 WhatsApp" : "📦 Products"}
+                    </button>
+                  ))}
+                </div>
+
+                {pitchTab === "email" && (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-slate-400 mb-1">Subject</p>
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1 text-sm text-slate-800 font-medium bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">{pitch.subject}</p>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(pitch.subject)}
+                          className="text-xs text-slate-400 hover:text-slate-600 shrink-0"
+                        >Copy</button>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs text-slate-400">Email Body</p>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(pitch.pitch)}
+                          className="text-xs text-slate-400 hover:text-slate-600"
+                        >Copy all</button>
+                      </div>
+                      <pre className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 rounded-lg px-4 py-3 border border-slate-100 max-h-64 overflow-y-auto font-sans leading-relaxed">
+                        {pitch.pitch}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {pitchTab === "whatsapp" && (
+                  <div className="space-y-3">
+                    <div className="bg-[#f0f7f0] rounded-xl p-4">
+                      <div className="bg-white rounded-2xl rounded-br-sm px-4 py-3 text-sm text-slate-800 shadow-sm border border-slate-100 max-w-xs ml-auto whitespace-pre-wrap leading-relaxed">
+                        {pitch.whatsappMessage}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setWaMessage(pitch.whatsappMessage); setPitchOpen(false); }}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+                      >
+                        Use as WhatsApp Message
+                      </button>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(pitch.whatsappMessage)}
+                        className="px-4 border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium rounded-lg"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {pitchTab === "products" && (
+                  <div className="space-y-2">
+                    {pitch.recommendedProducts.map((p) => (
+                      <div key={p.id} className="bg-slate-50 rounded-lg px-4 py-3 border border-slate-100">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-slate-800">{p.name}</span>
+                          {p.sku && <span className="text-xs bg-white text-slate-500 px-2 py-0.5 rounded border border-slate-200 font-mono">{p.sku}</span>}
+                          <span className="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded">{p.category}</span>
+                        </div>
+                        <p className="text-xs text-slate-500">{p.reason}</p>
+                        <div className="flex gap-4 mt-1.5 text-xs text-slate-400">
+                          {p.mrp != null && <span>MRP: <b className="text-slate-600">₹{p.mrp}</b></span>}
+                          {p.dealerPrice != null && <span>Dealer: <b className="text-slate-600">₹{p.dealerPrice}</b></span>}
+                          {p.moq && <span>MOQ: <b className="text-slate-600">{p.moq}</b></span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-400 text-center py-4">Failed to generate pitch. Try again.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* WhatsApp */}

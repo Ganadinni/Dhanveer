@@ -19,6 +19,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         assignedTo: { select: { id: true, name: true } },
         activities: { orderBy: { createdAt: "desc" } },
         tasks: { where: { completed: false }, orderBy: { dueDate: "asc" } },
+        score: true,
       },
     }),
     isAdmin

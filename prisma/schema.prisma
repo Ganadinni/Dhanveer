@@ -82,6 +82,8 @@ model Lead {
 
   activities   LeadActivity[]
   tasks        Task[]
+  rasikEvents  RasikEvent[]
+  score        LeadScore?
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -125,4 +127,88 @@ model Task {
   @@index([assignedToId])
   @@index([dueDate])
   @@map("tasks")
+}
+
+// ─── Product Knowledge Base ───────────────────────────────────────────────────
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  sortOrder   Int       @default(0)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+
+  @@map("product_categories")
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  name            String
+  sku             String?         @unique
+  categoryId      String
+  category        ProductCategory @relation(fields: [categoryId], references: [id])
+  description     String?
+  targetCustomers String?         // "cafes, restaurants, hotels, QSR"
+  usages          String?         // how to use / application areas
+  keyBenefits     String?
+  hsnCode         String?
+  gstRate         Float?          // e.g. 18 for 18%
+  mrp             Float?
+  dealerPrice     Float?
+  moq             String?         // "1 box (25 sachets)"
+  packSize        String?         // "25 sachets x 25g"
+  shelfLife       String?
+  isActive        Boolean         @default(true)
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+// ─── Rasik Integration ────────────────────────────────────────────────────────
+
+model RasikConfig {
+  id        String   @id @default(cuid())
+  baseUrl   String
+  apiKey    String
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@map("rasik_config")
+}
+
+model RasikEvent {
+  id          String   @id @default(cuid())
+  eventType   String   // "LEAD_QUALIFIED" | "CHAT_ENDED" | "ORDER_PLACED" | "ENQUIRY"
+  rasikRef    String?  // Rasik's internal ID for the event
+  leadId      String?
+  lead        Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  payload     Json
+  processed   Boolean  @default(false)
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([leadId])
+  @@index([eventType])
+  @@map("rasik_events")
+}
+
+// ─── Lead Scoring ─────────────────────────────────────────────────────────────
+
+model LeadScore {
+  id            String   @id @default(cuid())
+  leadId        String   @unique
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  score         Int      @default(0)   // 0-100
+  tier          String   @default("COLD")  // HOT | WARM | COLD
+  fitScore      Int      @default(0)   // product fit
+  engageScore   Int      @default(0)   // engagement / activity
+  intentScore   Int      @default(0)   // buying intent signals
+  reasoning     String?
+  lastScoredAt  DateTime @default(now())
+
+  @@map("lead_scores")
 }
