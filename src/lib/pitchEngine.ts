@@ -29,33 +29,99 @@ interface RecommendedProduct {
   moq: string | null;
 }
 
-// Keyword → product affinity map (customer type signals)
+// Keyword → product category affinity (maps business type signals to relevant product categories)
 const CUSTOMER_SIGNALS: Record<string, string[]> = {
-  cafe: ["Boba Bubble Tea Premixes", "Coffee Premixes", "Fruit-Based Beverages"],
-  coffee: ["Coffee Premixes", "Boba Bubble Tea Premixes"],
-  restaurant: ["Instant Tea Premixes", "Coffee Premixes", "Fruit-Based Beverages"],
-  hotel: ["Instant Tea Premixes", "Coffee Premixes", "Dairy & Milk Beverages", "Health & Wellness"],
-  hospital: ["Instant Tea Premixes", "Health & Wellness"],
-  office: ["Instant Tea Premixes", "Coffee Premixes"],
-  canteen: ["Instant Tea Premixes", "Coffee Premixes"],
-  sweet: ["Dairy & Milk Beverages", "Boba Bubble Tea Premixes"],
-  bakery: ["Boba Bubble Tea Premixes", "Coffee Premixes"],
-  juice: ["Fruit-Based Beverages", "Boba Bubble Tea Premixes"],
-  bar: ["Fruit-Based Beverages"],
-  wellness: ["Health & Wellness", "Instant Tea Premixes"],
-  yoga: ["Health & Wellness"],
-  gym: ["Health & Wellness", "Dairy & Milk Beverages"],
-  resort: ["Boba Bubble Tea Premixes", "Fruit-Based Beverages", "Coffee Premixes"],
-  college: ["Boba Bubble Tea Premixes", "Coffee Premixes"],
-  school: ["Boba Bubble Tea Premixes", "Instant Tea Premixes"],
-  multiplex: ["Boba Bubble Tea Premixes", "Coffee Premixes"],
-  qsr: ["Boba Bubble Tea Premixes", "Instant Tea Premixes", "Coffee Premixes"],
-  chain: ["Boba Bubble Tea Premixes", "Instant Tea Premixes", "Coffee Premixes"],
-  pharmacy: ["Health & Wellness"],
-  ayurvedic: ["Health & Wellness", "Instant Tea Premixes"],
-  mithai: ["Dairy & Milk Beverages"],
-  dhaba: ["Instant Tea Premixes"],
-  airport: ["Instant Tea Premixes", "Coffee Premixes"],
+  // Bubble tea / boba focused
+  cafe: ["Beverage Premixes", "Popping Boba", "Tapioca Pearls", "Syrups & Bases"],
+  boba: ["Beverage Premixes", "Popping Boba", "Tapioca Pearls", "Syrups & Bases"],
+  bubble: ["Beverage Premixes", "Popping Boba", "Tapioca Pearls", "Syrups & Bases"],
+  "bubble tea": ["Beverage Premixes", "Popping Boba", "Tapioca Pearls"],
+  tea: ["Beverage Premixes", "Tea Concentrates", "Syrups & Bases"],
+
+  // QSR / fast food
+  qsr: ["Beverage Premixes", "Milkshake & Lassi Mixes", "Mocktail & Lemonade Mixes"],
+  chain: ["Beverage Premixes", "Industrial Ingredients", "Tapioca Pearls"],
+  franchise: ["Beverage Premixes", "Industrial Ingredients", "Popping Boba"],
+  restaurant: ["Beverage Premixes", "Mocktail & Lemonade Mixes", "Tea Concentrates"],
+
+  // Hotel / hospitality
+  hotel: ["Beverage Premixes", "Tea Concentrates", "Mocktail & Lemonade Mixes"],
+  resort: ["Beverage Premixes", "Mocktail & Lemonade Mixes", "Syrups & Bases"],
+  hospitality: ["Beverage Premixes", "Tea Concentrates", "Mocktail & Lemonade Mixes"],
+
+  // Coffee shops
+  coffee: ["Beverage Premixes", "Syrups & Bases"],
+
+  // Bars / cocktails
+  bar: ["Mocktail & Lemonade Mixes", "Syrups & Bases", "Popping Boba"],
+  mocktail: ["Mocktail & Lemonade Mixes", "Syrups & Bases"],
+  lounge: ["Mocktail & Lemonade Mixes", "Syrups & Bases", "Beverage Premixes"],
+
+  // Dessert focused
+  dessert: ["Boba Desserts", "Popping Boba", "Beverage Premixes"],
+  bakery: ["Boba Desserts", "Beverage Premixes", "Milkshake & Lassi Mixes"],
+  cake: ["Boba Desserts", "Syrups & Bases"],
+  sweet: ["Milkshake & Lassi Mixes", "Boba Desserts", "Popping Boba"],
+  mithai: ["Milkshake & Lassi Mixes", "Boba Desserts"],
+  ice: ["Milkshake & Lassi Mixes", "Popping Boba", "Syrups & Bases"],
+
+  // Juice / fruit drinks
+  juice: ["Mocktail & Lemonade Mixes", "Syrups & Bases", "Beverage Premixes"],
+  fruit: ["Mocktail & Lemonade Mixes", "Syrups & Bases"],
+  lemonade: ["Mocktail & Lemonade Mixes", "Syrups & Bases"],
+
+  // Institutional / corporate
+  office: ["Beverage Premixes", "Tea Concentrates"],
+  canteen: ["Beverage Premixes", "Milkshake & Lassi Mixes"],
+  corporate: ["Beverage Premixes", "Tea Concentrates"],
+  hospital: ["Beverage Premixes", "Tea Concentrates"],
+  airport: ["Beverage Premixes", "Tea Concentrates"],
+  railway: ["Beverage Premixes", "Tea Concentrates"],
+  dhaba: ["Beverage Premixes", "Tea Concentrates"],
+
+  // Educational
+  college: ["Beverage Premixes", "Milkshake & Lassi Mixes", "Mocktail & Lemonade Mixes"],
+  school: ["Beverage Premixes", "Milkshake & Lassi Mixes"],
+  university: ["Beverage Premixes", "Milkshake & Lassi Mixes", "Mocktail & Lemonade Mixes"],
+
+  // Entertainment
+  multiplex: ["Beverage Premixes", "Milkshake & Lassi Mixes", "Popping Boba"],
+  cinema: ["Beverage Premixes", "Milkshake & Lassi Mixes"],
+
+  // Events / catering
+  event: ["Mocktail & Lemonade Mixes", "Beverage Premixes", "Popping Boba"],
+  catering: ["Mocktail & Lemonade Mixes", "Beverage Premixes", "Industrial Ingredients"],
+  wedding: ["Mocktail & Lemonade Mixes", "Milkshake & Lassi Mixes", "Boba Desserts"],
+  party: ["Mocktail & Lemonade Mixes", "Popping Boba", "Boba Desserts"],
+  festival: ["Mocktail & Lemonade Mixes", "Beverage Premixes", "Popping Boba"],
+
+  // Startups / new businesses
+  startup: ["Beverage Premixes", "Popping Boba", "Tapioca Pearls", "Syrups & Bases"],
+  "cloud kitchen": ["Beverage Premixes", "Milkshake & Lassi Mixes", "Mocktail & Lemonade Mixes"],
+  cloud: ["Beverage Premixes", "Milkshake & Lassi Mixes", "Mocktail & Lemonade Mixes"],
+  kitchen: ["Beverage Premixes", "Milkshake & Lassi Mixes"],
+  delivery: ["Beverage Premixes", "Milkshake & Lassi Mixes", "Mocktail & Lemonade Mixes"],
+  zomato: ["Beverage Premixes", "Milkshake & Lassi Mixes"],
+  swiggy: ["Beverage Premixes", "Milkshake & Lassi Mixes"],
+
+  // Distribution
+  distributor: ["Industrial Ingredients", "Beverage Premixes", "Popping Boba"],
+  wholesale: ["Industrial Ingredients", "Tapioca Pearls", "Popping Boba"],
+  supplier: ["Industrial Ingredients", "Beverage Premixes"],
+  trader: ["Industrial Ingredients", "Beverage Premixes"],
+
+  // Wellness / health
+  wellness: ["Beverage Premixes", "Tea Concentrates"],
+  yoga: ["Beverage Premixes", "Tea Concentrates"],
+  gym: ["Milkshake & Lassi Mixes", "Beverage Premixes"],
+  ayurvedic: ["Beverage Premixes", "Tea Concentrates"],
+  pharmacy: ["Beverage Premixes", "Tea Concentrates"],
+
+  // Indian food
+  biryani: ["Beverage Premixes", "Mocktail & Lemonade Mixes"],
+  punjabi: ["Milkshake & Lassi Mixes", "Beverage Premixes"],
+  lassi: ["Milkshake & Lassi Mixes"],
+  milkshake: ["Milkshake & Lassi Mixes", "Beverage Premixes"],
 };
 
 function detectCategories(text: string): string[] {
@@ -64,7 +130,7 @@ function detectCategories(text: string): string[] {
   for (const [keyword, cats] of Object.entries(CUSTOMER_SIGNALS)) {
     if (lower.includes(keyword)) cats.forEach((c) => matched.add(c));
   }
-  return matched.size > 0 ? Array.from(matched) : ["Boba Bubble Tea Premixes", "Instant Tea Premixes"];
+  return matched.size > 0 ? Array.from(matched) : ["Beverage Premixes", "Popping Boba"];
 }
 
 export async function generatePitch(lead: Lead): Promise<PitchResult> {
@@ -87,7 +153,6 @@ export async function generatePitch(lead: Lead): Promise<PitchResult> {
   const firstName = ownerName.split(" ")[0];
   const location = [lead.city, lead.state].filter(Boolean).join(", ");
 
-  // Build recommended product list with reasons
   const recommended: RecommendedProduct[] = finalProducts.slice(0, 4).map((p) => ({
     id: p.id,
     name: p.name,
@@ -105,35 +170,43 @@ export async function generatePitch(lead: Lead): Promise<PitchResult> {
 
   const pitch = `Dear ${firstName},
 
-Greetings from **The Tea Planet** — India's leading beverage premix company!
+Greetings from **The Tea Planet** — India's First Bubble Tea Manufacturer (Est. 2011)!
 
 We noticed that **${lead.businessName}**${location ? ` in ${location}` : ""} is in the F&B/hospitality space, and we believe our products can add significant value to your menu and margins.
 
 **Why The Tea Planet?**
-- Premium quality premixes trusted by 500+ cafes, hotels and QSRs across India
-- Easy preparation — no special equipment needed
-- Consistent taste every single time
-- High-margin beverages that customers love
+- India's First and Most Trusted Bubble Tea Manufacturer since 2011
+- **200%+ gross margins** on every drink you serve
+- Launch a complete beverage menu in just **7 days** — we handle training and setup
+- No special equipment needed — just add water and serve
+- Certifications: FSSC 22000 · FSSAI · HALAL · APEDA · FDA Registered
+- 8 dedicated production lines in Hyderabad with direct tea sourcing from Assam, West Bengal, Tamil Nadu & Sri Lanka
+- Trusted by **500+ partners** across cafes, hotels, QSRs and cloud kitchens
 
 **Products we recommend for ${lead.businessName}:**
 
 ${productLines}
 
-We would love to arrange a free sample kit and a short product demo for your team. No commitment needed — just taste the difference!
+💡 **Stop comparing price per kg. Start comparing cost per cup.**
+Our premixes deliver a cost per cup of ₹8–15, while you sell at ₹80–150. That's the math of premium margins.
+
+We would love to arrange a **free sample kit** and a short product demo for your team. No commitment needed — just taste the difference!
 
 **Next Steps:**
-- Reply to this message or call us to arrange your free sample kit
-- We can also share our complete product catalog with pricing
+- Reply to arrange your free sample kit (delivered to your door)
+- Ask for our complete product catalog with full pricing
+- Or call us directly to discuss a custom menu for ${lead.businessName}
 
-Looking forward to partnering with you!
+Looking forward to growing together!
 
 Warm regards,
 The Tea Planet Sales Team
-📞 +91-8886277713 | 🌐 www.theteaplanet.com`;
+📞 +91-8886277713 | 🌐 www.theteaplanet.com
+_India's #1 Beverage Premix Partner_`;
 
-  const subject = `Free Sample Kit for ${lead.businessName} — Premium Beverage Premixes`;
+  const subject = `Free Sample Kit for ${lead.businessName} — 200%+ Margin Beverages | The Tea Planet`;
 
-  const waMessage = buildWhatsAppMessage(firstName, lead.businessName, recommended.slice(0, 3));
+  const waMessage = buildWhatsAppMessage(firstName, lead.businessName, location, recommended.slice(0, 3));
 
   return { subject, pitch, recommendedProducts: recommended, whatsappMessage: waMessage };
 }
@@ -144,20 +217,26 @@ function deriveReason(keyBenefits: string, businessName: string): string {
   return parts.slice(0, 2).join(" · ") || keyBenefits.slice(0, 100);
 }
 
-function buildWhatsAppMessage(firstName: string, businessName: string, products: RecommendedProduct[]): string {
+function buildWhatsAppMessage(firstName: string, businessName: string, location: string, products: RecommendedProduct[]): string {
   const prodList = products.map((p) => `• ${p.name}`).join("\n");
   return `Hi ${firstName}! 👋
 
-I'm reaching out from *The Tea Planet* — India's premium beverage premix company.
+I'm reaching out from *The Tea Planet* — India's First Bubble Tea Manufacturer (Est. 2011) 🏆
 
-We'd love to help *${businessName}* add high-margin drinks to your menu! 🍵
+We help businesses like *${businessName}*${location ? ` in ${location}` : ""} launch high-margin beverage menus in just *7 days*!
 
-Some products we think would work great for you:
+Some products that would work great for you:
 ${prodList}
 
-Interested in a FREE sample kit? No commitment, just taste the quality! ✅
+💰 *200%+ gross margin* on every cup you serve
+⚡ No special equipment needed
+✅ FSSC 22000 · FSSAI · HALAL certified
 
-Reply *YES* and I'll arrange delivery right away! 🚀`;
+Interested in a *FREE sample kit*? No commitment — just taste the quality! 🍵
+
+Reply *YES* and I'll arrange delivery to your door! 🚀
+
+_The Tea Planet | +91-8886277713 | www.theteaplanet.com_`;
 }
 
 export async function scoreLead(leadId: string): Promise<void> {
@@ -173,13 +252,13 @@ export async function scoreLead(leadId: string): Promise<void> {
   // Fit score — how well does the business type match our products
   const searchText = [lead.businessName, lead.notes].filter(Boolean).join(" ").toLowerCase();
   const signalMatches = Object.keys(CUSTOMER_SIGNALS).filter((k) => searchText.includes(k)).length;
-  const fitScore = Math.min(100, signalMatches * 15 + (lead.phone ? 10 : 0) + (lead.email ? 10 : 0));
+  const fitScore = Math.min(100, signalMatches * 12 + (lead.phone ? 10 : 0) + (lead.email ? 10 : 0));
 
   // Engagement score — based on activity count
   const activityCount = lead.activities.length;
   const engageScore = Math.min(100, activityCount * 12);
 
-  // Intent score — based on status
+  // Intent score — based on pipeline status
   const STATUS_INTENT: Record<string, number> = {
     NEW: 10, CONTACTED: 30, QUALIFIED: 55, PROPOSAL_SENT: 70, NEGOTIATION: 85, WON: 100, LOST: 0,
   };
@@ -189,9 +268,9 @@ export async function scoreLead(leadId: string): Promise<void> {
   const tier = score >= 70 ? "HOT" : score >= 40 ? "WARM" : "COLD";
 
   const reasoning = [
-    fitScore >= 30 ? "Strong business type match" : "Generic business type",
-    engageScore >= 30 ? `Active engagement (${activityCount} activities)` : "Limited engagement",
-    intentScore >= 55 ? "High buying intent (pipeline stage)" : intentScore >= 30 ? "Mid-funnel" : "Early stage",
+    fitScore >= 30 ? "Strong business type match for TTP products" : "Generic business type",
+    engageScore >= 30 ? `Active engagement (${activityCount} activities)` : "Limited engagement so far",
+    intentScore >= 55 ? "High buying intent (pipeline stage)" : intentScore >= 30 ? "Mid-funnel prospect" : "Early stage lead",
   ].join(" · ");
 
   await db.leadScore.upsert({
