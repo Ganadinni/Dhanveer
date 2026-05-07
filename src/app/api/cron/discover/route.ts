@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { runDiscovery } from "@/app/api/admin/discover/[id]/run/route";
+import { runDiscovery } from "@/lib/discoveryEngine";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";

@@ -138,7 +138,6 @@ async function generateWithClaude(
   const client = new Anthropic();
   const location = [lead.city, lead.state].filter(Boolean).join(", ");
   const ownerName = lead.ownerName ?? "Sir/Ma'am";
-  const firstName = ownerName.split(" ")[0];
 
   // Build full catalog grouped by category for Claude to reason over
   const byCategory: Record<string, typeof allProducts> = {};
