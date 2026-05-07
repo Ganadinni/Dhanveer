@@ -44,12 +44,19 @@ interface Lead {
   status: string;
   source: string;
   notes?: string | null;
-  assignedTo?: { name: string } | null;
+  assignedTo?: { id?: string; name: string } | null;
+  assignedToId?: string | null;
   activities: { id: string; type: string; note?: string | null; createdAt: string }[];
   tasks: Task[];
 }
 
-export function LeadDetailClient({ lead }: { lead: Lead }) {
+interface UserOption { id: string; name: string; role: string; }
+
+export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
+  lead: Lead;
+  isAdmin?: boolean;
+  users?: UserOption[];
+}) {
   const router = useRouter();
   const [status, setStatus] = useState(lead.status);
   const [saving, setSaving] = useState(false);
@@ -57,6 +64,7 @@ export function LeadDetailClient({ lead }: { lead: Lead }) {
   const [addingNote, setAddingNote] = useState(false);
   const [activities, setActivities] = useState(lead.activities);
   const [tasks, setTasks] = useState<Task[]>(lead.tasks ?? []);
+  const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskType, setTaskType] = useState<TaskType>("FOLLOW_UP");
   const [taskDue, setTaskDue] = useState("");
@@ -117,7 +125,17 @@ export function LeadDetailClient({ lead }: { lead: Lead }) {
     setAddingNote(false);
   }
 
+  async function assignLead(newAssignedToId: string) {
+    setAssignedToId(newAssignedToId);
+    await fetch(`/api/leads/${lead.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignedToId: newAssignedToId || null }),
+    });
+  }
+
   async function deleteLead() {
+    if (!isAdmin) return;
     if (!confirm("Delete this lead? This cannot be undone.")) return;
     await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
     router.push("/dashboard/leads");
@@ -130,11 +148,13 @@ export function LeadDetailClient({ lead }: { lead: Lead }) {
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">{lead.businessName}</h2>
-            <p className="text-sm text-slate-500">{lead.source.replace("_", " ")}</p>
+            {isAdmin && <p className="text-sm text-slate-400">Source: {lead.source.replace(/_/g, " ")}</p>}
           </div>
-          <button onClick={deleteLead} className="text-xs text-red-500 hover:text-red-700">
-            Delete lead
-          </button>
+          {isAdmin && (
+            <button onClick={deleteLead} className="text-xs text-red-500 hover:text-red-700">
+              Delete lead
+            </button>
+          )}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 text-sm">
@@ -143,7 +163,23 @@ export function LeadDetailClient({ lead }: { lead: Lead }) {
           <Info label="Email" value={lead.email} />
           <Info label="City" value={[lead.city, lead.state, lead.pincode].filter(Boolean).join(", ")} />
           <Info label="Address" value={lead.address} />
-          <Info label="Assigned to" value={lead.assignedTo?.name} />
+          {isAdmin ? (
+            <div>
+              <p className="text-xs text-slate-400">Assigned to</p>
+              <select
+                value={assignedToId}
+                onChange={(e) => assignLead(e.target.value)}
+                className="mt-1 text-sm text-slate-700 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
+              >
+                <option value="">— Unassigned —</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <Info label="Assigned to" value={lead.assignedTo?.name} />
+          )}
         </div>
 
         {lead.notes && (

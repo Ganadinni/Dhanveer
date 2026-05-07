@@ -11,8 +11,11 @@ export async function GET(req: NextRequest) {
   const city = searchParams.get("city") ?? undefined;
   const search = searchParams.get("search") ?? undefined;
 
+  const isSales = session.user.role === "SALES";
+
   const leads = await db.lead.findMany({
     where: {
+      ...(isSales && { assignedToId: session.user.id }),
       ...(status && { status: status as never }),
       ...(city && { city }),
       ...(search && {
