@@ -20,6 +20,8 @@ interface Task {
   notes: string | null;
 }
 
+type Activity = { id: string; type: string; note?: string | null; createdAt: string };
+
 const STATUS_OPTIONS = ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL_SENT", "NEGOTIATION", "WON", "LOST"];
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-50 text-blue-700",
@@ -29,6 +31,15 @@ const STATUS_COLORS: Record<string, string> = {
   NEGOTIATION: "bg-pink-50 text-pink-700",
   WON: "bg-green-50 text-green-700",
   LOST: "bg-red-50 text-red-700",
+};
+
+const ACTIVITY_ICONS: Record<string, string> = {
+  NOTE: "📝",
+  CALL: "📞",
+  WHATSAPP_SENT: "💬",
+  WHATSAPP_RECEIVED: "💬",
+  EMAIL: "✉️",
+  VISIT: "🏢",
 };
 
 interface Lead {
@@ -46,7 +57,7 @@ interface Lead {
   notes?: string | null;
   assignedTo?: { id?: string; name: string } | null;
   assignedToId?: string | null;
-  activities: { id: string; type: string; note?: string | null; createdAt: string }[];
+  activities: Activity[];
   tasks: Task[];
 }
 
@@ -62,7 +73,7 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
-  const [activities, setActivities] = useState(lead.activities);
+  const [activities, setActivities] = useState<Activity[]>(lead.activities);
   const [tasks, setTasks] = useState<Task[]>(lead.tasks ?? []);
   const [assignedToId, setAssignedToId] = useState(lead.assignedToId ?? "");
   const [taskTitle, setTaskTitle] = useState("");
@@ -70,6 +81,11 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
   const [taskDue, setTaskDue] = useState("");
   const [addingTask, setAddingTask] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
+
+  // WhatsApp state
+  const [waMessage, setWaMessage] = useState("");
+  const [sendingWa, setSendingWa] = useState(false);
+  const [waError, setWaError] = useState("");
 
   async function addTask() {
     if (!taskTitle.trim()) return;
@@ -119,7 +135,7 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
     });
     if (res.ok) {
       const json = await res.json();
-      setActivities([json.data, ...activities]);
+      setActivities((prev) => [json.data, ...prev]);
       setNote("");
     }
     setAddingNote(false);
@@ -134,12 +150,41 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
     });
   }
 
+  async function sendWhatsApp() {
+    if (!waMessage.trim() || !lead.phone) return;
+    setSendingWa(true);
+    setWaError("");
+    const res = await fetch("/api/whatsapp/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leadId: lead.id, to: lead.phone, message: waMessage }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const newActivity: Activity = {
+        id: crypto.randomUUID(),
+        type: "WHATSAPP_SENT",
+        note: waMessage,
+        createdAt: new Date().toISOString(),
+      };
+      setActivities((prev) => [newActivity, ...prev]);
+      setWaMessage("");
+    } else {
+      setWaError(data.error ?? "Failed to send");
+    }
+    setSendingWa(false);
+  }
+
   async function deleteLead() {
     if (!isAdmin) return;
     if (!confirm("Delete this lead? This cannot be undone.")) return;
     await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
     router.push("/dashboard/leads");
   }
+
+  const waConversation = activities.filter((a) =>
+    a.type === "WHATSAPP_SENT" || a.type === "WHATSAPP_RECEIVED"
+  );
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
@@ -209,6 +254,71 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
               {s.replace("_", " ")}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* WhatsApp */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 bg-green-50">
+          <span className="text-green-600 text-base">💬</span>
+          <p className="text-sm font-medium text-green-800">WhatsApp</p>
+          {lead.phone && <span className="text-xs text-green-600 ml-auto">{lead.phone}</span>}
+        </div>
+
+        {/* Conversation thread */}
+        <div className="px-5 py-4 space-y-2 max-h-64 overflow-y-auto bg-[#f0f7f0]">
+          {waConversation.length === 0 ? (
+            <p className="text-xs text-slate-400 text-center py-4">No WhatsApp messages yet</p>
+          ) : (
+            [...waConversation].reverse().map((a) => {
+              const sent = a.type === "WHATSAPP_SENT";
+              return (
+                <div key={a.id} className={`flex ${sent ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${
+                      sent
+                        ? "bg-green-600 text-white rounded-br-sm"
+                        : "bg-white text-slate-800 rounded-bl-sm border border-slate-100"
+                    }`}
+                  >
+                    <p>{a.note}</p>
+                    <p className={`text-[10px] mt-1 ${sent ? "text-green-100" : "text-slate-400"}`}>
+                      {new Date(a.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                      {" · "}
+                      {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Send box */}
+        <div className="px-4 py-3 border-t border-slate-100">
+          {!lead.phone ? (
+            <p className="text-xs text-slate-400 text-center">Add a phone number to this lead to enable WhatsApp</p>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <input
+                  value={waMessage}
+                  onChange={(e) => setWaMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendWhatsApp()}
+                  placeholder="Type a message…"
+                  className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <button
+                  onClick={sendWhatsApp}
+                  disabled={sendingWa || !waMessage.trim()}
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-full transition-colors"
+                >
+                  {sendingWa ? "…" : "Send"}
+                </button>
+              </div>
+              {waError && <p className="text-xs text-red-500 mt-1.5 px-1">{waError}</p>}
+            </>
+          )}
         </div>
       </div>
 
@@ -308,11 +418,15 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
         ) : (
           <ul className="space-y-2">
             {activities.map((a) => (
-              <li key={a.id} className="flex gap-3 text-sm">
-                <span className="text-slate-400 whitespace-nowrap text-xs pt-0.5">
-                  {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                </span>
-                <span className="text-slate-700">{a.note}</span>
+              <li key={a.id} className="flex gap-3 text-sm items-start">
+                <span className="text-base shrink-0">{ACTIVITY_ICONS[a.type] ?? "📌"}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-slate-700">{a.note}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {a.type.replace("_", " ").toLowerCase()} ·{" "}
+                    {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                  </p>
+                </div>
               </li>
             ))}
           </ul>
