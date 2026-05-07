@@ -4,20 +4,21 @@ import { userHasPermission } from "@/lib/permissions";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
-// Optional: Brave Search for real web results (set BRAVE_API_KEY env var)
+// Optional: Serper.dev for real web results (set SERPER_API_KEY env var)
 async function webSearch(query: string): Promise<string> {
-  const key = process.env.BRAVE_API_KEY;
+  const key = process.env.SERPER_API_KEY;
   if (!key) return "";
   try {
-    const res = await fetch(
-      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5&country=IN`,
-      { headers: { "X-Subscription-Token": key, Accept: "application/json" } }
-    );
+    const res = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: { "X-API-KEY": key, "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, gl: "in", num: 5 }),
+    });
     if (!res.ok) return "";
     const data = await res.json();
     return (
-      data.web?.results
-        ?.map((r: { title: string; description: string; url: string }) => `${r.title}: ${r.description} (${r.url})`)
+      data.organic
+        ?.map((r: { title: string; snippet: string; link: string }) => `${r.title}: ${r.snippet} (${r.link})`)
         .join("\n") ?? ""
     );
   } catch {
