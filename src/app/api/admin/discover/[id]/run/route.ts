@@ -1,11 +1,12 @@
 import { getSession } from "@/lib/session";
 import { db } from "@/lib/db";
 import { searchGooglePlaces } from "@/lib/googlePlaces";
+import { runLeadResearch } from "@/lib/researchEngine";
+import { scoreLead } from "@/lib/pitchEngine";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
-// Discovery runs can take a while across multiple cities
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -70,7 +71,7 @@ export async function runDiscovery(
           continue;
         }
 
-        await db.lead.create({
+        const newLead = await db.lead.create({
           data: {
             businessName: place.businessName,
             phone: place.phone,
@@ -88,6 +89,14 @@ export async function runDiscovery(
           },
         });
         added++;
+
+        // Auto-research + score each new lead (fire sequentially — silently skips if no AI key)
+        try {
+          await runLeadResearch(newLead.id, "Discovery");
+        } catch {
+          // Research failure must not stop the import
+          await scoreLead(newLead.id).catch(() => null);
+        }
       }
     } catch (err) {
       errors.push(`${city}: ${err instanceof Error ? err.message : String(err)}`);

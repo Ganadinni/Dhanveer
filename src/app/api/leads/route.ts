@@ -45,6 +45,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "businessName is required" }, { status: 400 });
   }
 
+  // Duplicate check — same business name in the same city (case-insensitive)
+  const duplicate = await db.lead.findFirst({
+    where: {
+      businessName: { equals: businessName, mode: "insensitive" },
+      ...(city ? { city: { equals: city, mode: "insensitive" } } : {}),
+    },
+    select: { id: true, businessName: true, city: true, status: true },
+  });
+  if (duplicate) {
+    return NextResponse.json(
+      {
+        error: `A lead for "${duplicate.businessName}"${duplicate.city ? ` in ${duplicate.city}` : ""} already exists.`,
+        existingId: duplicate.id,
+        existingName: duplicate.businessName,
+        existingCity: duplicate.city,
+      },
+      { status: 409 }
+    );
+  }
+
   const lead = await db.lead.create({
     data: {
       businessName,

@@ -66,6 +66,8 @@ interface Lead {
   assignedTo?: { id?: string; name: string } | null; assignedToId?: string | null;
   activities: Activity[]; tasks: Task[];
   score?: { score: number; tier: string; fitScore: number; engageScore: number; intentScore: number; reasoning: string | null } | null;
+  researchData?: ResearchResult | null;
+  researchedAt?: string | null;
 }
 
 interface PitchResult {
@@ -122,10 +124,10 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   const [pitchTab, setPitchTab]       = useState<"email" | "whatsapp" | "products">("email");
   const [leadScore, setLeadScore]     = useState(lead.score ?? null);
 
-  // Research state
-  const [research, setResearch]       = useState<ResearchResult | null>(null);
+  // Research state — pre-populated from DB if already researched
+  const [research, setResearch]       = useState<ResearchResult | null>(lead.researchData ?? null);
   const [researching, setResearching] = useState(false);
-  const [researchOpen, setResearchOpen] = useState(false);
+  const [researchOpen, setResearchOpen] = useState(!!lead.researchData);
   const [researchError, setResearchError] = useState("");
 
   const waConversation = activities.filter((a) => a.type === "WHATSAPP_SENT" || a.type === "WHATSAPP_RECEIVED");
@@ -176,6 +178,9 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
           note: `🔍 Deep Research completed. ${data.summary ?? ""}`,
           createdAt: new Date().toISOString(),
         }, ...prev]);
+        // Refresh score since research triggers re-scoring on the server
+        fetch("/api/ai/score", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ leadId: lead.id }) })
+          .then(r => r.ok ? r.json() : null).then(s => { if (s) setLeadScore(s); }).catch(() => null);
       } else {
         setResearchError(data.error ?? `Research failed (${res.status})`);
       }

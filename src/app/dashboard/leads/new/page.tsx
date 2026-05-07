@@ -5,17 +5,25 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import Link from "next/link";
 
+interface DuplicateInfo {
+  existingId: string;
+  existingName: string;
+  existingCity: string | null;
+}
+
 const SOURCES = ["MANUAL", "GOOGLE_PLACES", "WHATSAPP", "REFERRAL", "WEBSITE", "OTHER"];
 
 export default function NewLeadPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [duplicate, setDuplicate] = useState<DuplicateInfo | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setDuplicate(null);
 
     const form = new FormData(e.currentTarget);
     const data = Object.fromEntries(form.entries());
@@ -25,6 +33,13 @@ export default function NewLeadPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+
+    if (res.status === 409) {
+      const json = await res.json();
+      setDuplicate({ existingId: json.existingId, existingName: json.existingName, existingCity: json.existingCity });
+      setLoading(false);
+      return;
+    }
 
     if (!res.ok) {
       const json = await res.json();
@@ -87,6 +102,21 @@ export default function NewLeadPage() {
                 placeholder="Any relevant notes about this lead…"
               />
             </div>
+
+            {duplicate && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="font-medium">This lead already exists.</p>
+                <p className="mt-0.5 text-amber-700">
+                  <strong>{duplicate.existingName}</strong>{duplicate.existingCity ? ` in ${duplicate.existingCity}` : ""} is already in the system.
+                </p>
+                <Link
+                  href={`/dashboard/leads/${duplicate.existingId}`}
+                  className="mt-2 inline-block rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
+                >
+                  View Existing Lead →
+                </Link>
+              </div>
+            )}
 
             {error && (
               <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>

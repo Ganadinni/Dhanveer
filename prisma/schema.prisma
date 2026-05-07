@@ -78,6 +78,8 @@ model Lead {
   notes        String?
   tags         String[] @default([])   // Cafe | QSR Chain | Key Account | Hotels/Bakery/Restaurant | PAN Asian | Dessert Stores | Industrial | Chef/Consultant | Distributors | Export
   googlePlaceId String?   @unique
+  researchData  Json?
+  researchedAt  DateTime?
 
   assignedToId String?
   assignedTo   User?      @relation("AssignedLeads", fields: [assignedToId], references: [id])
