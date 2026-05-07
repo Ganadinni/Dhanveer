@@ -84,10 +84,11 @@ model Lead {
   assignedToId String?
   assignedTo   User?      @relation("AssignedLeads", fields: [assignedToId], references: [id])
 
-  activities   LeadActivity[]
-  tasks        Task[]
-  rasikEvents  RasikEvent[]
-  score        LeadScore?
+  activities    LeadActivity[]
+  tasks         Task[]
+  rasikEvents   RasikEvent[]
+  score         LeadScore?
+  enrollments   LeadSequenceEnrollment[]
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -234,3 +235,48 @@ model DiscoverySearch {
 
   @@map("discovery_searches")
 }
+
+// ─── WhatsApp Sequences ───────────────────────────────────────────────────────
+
+model WhatsAppSequence {
+  id          String                   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean                  @default(true)
+  steps       WhatsAppSequenceStep[]
+  enrollments LeadSequenceEnrollment[]
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  @@map("whatsapp_sequences")
+}
+
+model WhatsAppSequenceStep {
+  id         String           @id @default(cuid())
+  sequenceId String
+  sequence   WhatsAppSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  stepNumber Int
+  delayDays  Int              // days after enrollment to send (0 = same day)
+  message    String           // supports {name} {business} {city} placeholders
+
+  @@index([sequenceId])
+  @@map("whatsapp_sequence_steps")
+}
+
+model LeadSequenceEnrollment {
+  id           String           @id @default(cuid())
+  leadId       String
+  lead         Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  sequenceId   String
+  sequence     WhatsAppSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  currentStep  Int              @default(0)   // index of next step to send
+  enrolledAt   DateTime         @default(now())
+  nextSendAt   DateTime?
+  lastSentAt   DateTime?
+  status       String           @default("ACTIVE")  // ACTIVE | PAUSED | COMPLETED | UNSUBSCRIBED
+
+  @@unique([leadId, sequenceId])
+  @@index([status, nextSendAt])
+  @@map("lead_sequence_enrollments")
+}
+

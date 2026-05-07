@@ -11,6 +11,7 @@ const navItems = [
   { href: "/dashboard/pipeline", label: "Pipeline",         icon: "📈" },
   { href: "/dashboard/tasks",    label: "Tasks",            icon: "✅" },
   { href: "/admin/reports",      label: "Reports",          icon: "📋" },
+  { href: "/admin/sequences",     label: "WA Sequences",     icon: "📲" },
   { href: "/admin/knowledge",    label: "Product Knowledge",icon: "📦" },
   { href: "/admin/users",        label: "Users",            icon: "👤" },
   { href: "/admin/settings",     label: "Integrations",     icon: "🔌" },

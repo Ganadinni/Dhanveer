@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
+
+interface Sequence { id: string; name: string; steps: unknown[]; }
 
 const LEAD_FIELDS = [
   { key: "businessName", label: "Business Name", required: true },
@@ -27,6 +29,15 @@ export function ImportCsvClient() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ created: number; skipped: number; total: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [sequences, setSequences] = useState<Sequence[]>([]);
+  const [selectedSequenceId, setSelectedSequenceId] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/sequences")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setSequences(d.filter((s: Sequence & { isActive?: boolean }) => s.isActive !== false)); })
+      .catch(() => {});
+  }, []);
 
   function processFile(file: File) {
     const reader = new FileReader();
@@ -84,7 +95,7 @@ export function ImportCsvClient() {
     const res = await fetch("/api/leads/import-bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rows: mapped }),
+      body: JSON.stringify({ rows: mapped, sequenceId: selectedSequenceId || undefined }),
     });
 
     const data = await res.json();
@@ -183,12 +194,39 @@ export function ImportCsvClient() {
             </div>
           </div>
 
+          {/* Sequence enrollment */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-slate-800 mb-0.5">Enroll in WhatsApp Sequence</p>
+                <p className="text-xs text-slate-400">Optional — automatically add imported leads to a drip campaign</p>
+              </div>
+            </div>
+            <div className="mt-3">
+              <select
+                value={selectedSequenceId}
+                onChange={(e) => setSelectedSequenceId(e.target.value)}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">— No sequence (skip enrollment) —</option>
+                {sequences.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} · {(s.steps as unknown[]).length} steps
+                  </option>
+                ))}
+              </select>
+              {sequences.length === 0 && (
+                <p className="text-xs text-slate-400 mt-1.5">No active sequences yet — create one in the Sequences page first.</p>
+              )}
+            </div>
+          </div>
+
           <button
             onClick={handleImport}
             disabled={importing || !colMap.businessName}
             className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium py-3 rounded-xl text-sm transition-colors"
           >
-            {importing ? `Importing ${rows.length} rows…` : `Import ${rows.length} Leads`}
+            {importing ? `Importing ${rows.length} rows…` : `Import ${rows.length} Leads${selectedSequenceId ? " + Enroll" : ""}`}
           </button>
           {!colMap.businessName && (
             <p className="text-xs text-red-500 text-center -mt-3">Map the Business Name column to continue</p>

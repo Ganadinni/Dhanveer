@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 type TaskType = "CALL" | "FOLLOW_UP" | "MEETING" | "EMAIL" | "OTHER";
@@ -70,6 +70,13 @@ interface Lead {
   researchedAt?: string | null;
 }
 
+interface SequenceOption { id: string; name: string; isActive: boolean; steps: unknown[]; }
+interface Enrollment {
+  id: string; sequenceId: string; currentStep: number; status: string;
+  nextSendAt: string | null; enrolledAt: string;
+  sequence: { name: string; steps: unknown[] };
+}
+
 interface PitchResult {
   subject: string; pitch: string; whatsappMessage: string;
   recommendedProducts: { id: string; name: string; sku: string | null; category: string; reason: string; mrp: number | null; dealerPrice: number | null; moq: string | null }[];
@@ -129,6 +136,24 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   const [researching, setResearching] = useState(false);
   const [researchOpen, setResearchOpen] = useState(!!lead.researchData);
   const [researchError, setResearchError] = useState("");
+
+  // Sequence enrollment state
+  const [enrollments, setEnrollments]         = useState<Enrollment[]>([]);
+  const [sequences, setSequences]             = useState<SequenceOption[]>([]);
+  const [selectedSeqId, setSelectedSeqId]     = useState("");
+  const [enrolling, setEnrolling]             = useState(false);
+  const [enrollmentOpen, setEnrollmentOpen]   = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/leads/${lead.id}/enroll`)
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setEnrollments(d); })
+      .catch(() => {});
+    fetch("/api/admin/sequences")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setSequences(d.filter((s: SequenceOption) => s.isActive)); })
+      .catch(() => {});
+  }, [lead.id]);
 
   const waConversation = activities.filter((a) => a.type === "WHATSAPP_SENT" || a.type === "WHATSAPP_RECEIVED");
   const emailHistory   = activities.filter((a) => a.type === "EMAIL");
@@ -274,6 +299,36 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   async function assignLead(newAssignedToId: string) {
     setAssignedToId(newAssignedToId);
     await fetch(`/api/leads/${lead.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assignedToId: newAssignedToId || null }) });
+  }
+
+  async function enrollInSequence() {
+    if (!selectedSeqId) return;
+    setEnrolling(true);
+    const res = await fetch(`/api/leads/${lead.id}/enroll`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sequenceId: selectedSeqId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setEnrollments((prev) => {
+        const existing = prev.find((e) => e.sequenceId === selectedSeqId);
+        if (existing) return prev.map((e) => e.sequenceId === selectedSeqId ? data : e);
+        return [data, ...prev];
+      });
+      setSelectedSeqId("");
+    }
+    setEnrolling(false);
+  }
+
+  async function updateEnrollmentStatus(enrollmentId: string, status: string) {
+    const res = await fetch(`/api/leads/${lead.id}/enroll`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enrollmentId, status }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? data : e));
+    }
   }
 
   async function deleteLead() {
@@ -768,6 +823,92 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      {/* ── WhatsApp Sequences ────────────────────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-emerald-50">
+          <div className="flex items-center gap-2">
+            <span className="text-emerald-600 text-base">📲</span>
+            <p className="text-sm font-medium text-emerald-800">WhatsApp Sequences</p>
+          </div>
+          <button onClick={() => setEnrollmentOpen((v) => !v)} className="text-xs text-emerald-600 hover:text-emerald-800 font-medium">
+            {enrollmentOpen ? "Hide" : enrollments.length > 0 ? `${enrollments.length} enrolled` : "+ Enroll"}
+          </button>
+        </div>
+
+        {enrollmentOpen && (
+          <div className="p-5 space-y-4">
+            {/* Enroll picker */}
+            <div className="flex gap-2">
+              <select
+                value={selectedSeqId}
+                onChange={(e) => setSelectedSeqId(e.target.value)}
+                className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="">— Select a sequence —</option>
+                {sequences.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} · {s.steps.length} steps</option>
+                ))}
+              </select>
+              <button
+                onClick={enrollInSequence}
+                disabled={!selectedSeqId || enrolling}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium px-4 rounded-lg transition-colors"
+              >
+                {enrolling ? "…" : "Enroll"}
+              </button>
+            </div>
+
+            {/* Active enrollments */}
+            {enrollments.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-2">Not enrolled in any sequence yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {enrollments.map((e) => {
+                  const totalSteps = (e.sequence.steps as unknown[]).length;
+                  const pct = totalSteps > 0 ? Math.round((e.currentStep / totalSteps) * 100) : 0;
+                  const statusColor =
+                    e.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" :
+                    e.status === "COMPLETED" ? "bg-slate-100 text-slate-500" :
+                    "bg-amber-100 text-amber-700";
+                  return (
+                    <div key={e.id} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{e.sequence.name}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Step {e.currentStep + 1} of {totalSteps}
+                            {e.nextSendAt && e.status === "ACTIVE" && (
+                              <> · Next: {new Date(e.nextSendAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</>
+                            )}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>{e.status}</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 mb-2">
+                        <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      {e.status !== "COMPLETED" && (
+                        <div className="flex gap-2">
+                          {e.status === "ACTIVE" ? (
+                            <button onClick={() => updateEnrollmentStatus(e.id, "PAUSED")}
+                              className="text-xs text-amber-600 hover:text-amber-800 font-medium">Pause</button>
+                          ) : e.status === "PAUSED" ? (
+                            <button onClick={() => updateEnrollmentStatus(e.id, "ACTIVE")}
+                              className="text-xs text-emerald-600 hover:text-emerald-800 font-medium">Resume</button>
+                          ) : null}
+                          <button onClick={() => updateEnrollmentStatus(e.id, "UNSUBSCRIBED")}
+                            className="text-xs text-red-400 hover:text-red-600 font-medium ml-auto">Unsubscribe</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

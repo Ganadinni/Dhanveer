@@ -1,6 +1,10 @@
 import { getSession } from "@/lib/session";
 import { db } from "@/lib/db";
+import { scoreLead } from "@/lib/pitchEngine";
+import { enrollLead } from "@/lib/sequenceEngine";
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 300;
 
 interface LeadRow {
   businessName: string;
@@ -18,27 +22,27 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { rows }: { rows: LeadRow[] } = await req.json();
+  const { rows, sequenceId }: { rows: LeadRow[]; sequenceId?: string } = await req.json();
   if (!rows?.length) return NextResponse.json({ error: "No rows provided" }, { status: 400 });
 
   const valid = rows.filter((r) => r.businessName?.trim());
-  if (!valid.length) return NextResponse.json({ error: "No valid rows — businessName is required" }, { status: 400 });
+  if (!valid.length) return NextResponse.json({ error: "No valid rows" }, { status: 400 });
 
   let created = 0;
   let skipped = 0;
+  const createdIds: string[] = [];
 
   for (const row of valid) {
     try {
-      // Skip if exact business name + phone already exists
       const exists = await db.lead.findFirst({
         where: {
           businessName: { equals: row.businessName.trim(), mode: "insensitive" },
-          ...(row.phone ? { phone: row.phone.trim() } : {}),
+          ...(row.city ? { city: { equals: row.city.trim(), mode: "insensitive" } } : {}),
         },
       });
       if (exists) { skipped++; continue; }
 
-      await db.lead.create({
+      const lead = await db.lead.create({
         data: {
           businessName: row.businessName.trim(),
           ownerName: row.ownerName?.trim() || null,
@@ -53,11 +57,21 @@ export async function POST(req: NextRequest) {
           assignedToId: session.id,
         },
       });
+
+      createdIds.push(lead.id);
       created++;
     } catch {
       skipped++;
     }
   }
+
+  // Score + enroll all new leads (fire-and-forget — response returns immediately)
+  Promise.all(
+    createdIds.map(async (id) => {
+      await scoreLead(id).catch(() => null);
+      if (sequenceId) await enrollLead(id, sequenceId).catch(() => null);
+    })
+  ).catch(() => null);
 
   return NextResponse.json({ created, skipped, total: valid.length });
 }
