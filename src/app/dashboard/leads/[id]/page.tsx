@@ -36,7 +36,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const rawPermissions = currentUser?.permissions ?? [];
   const role = currentUser?.role ?? session?.role ?? "VIEWER";
   const userPermissions: string[] = isAdmin
-    ? ["ai_pitch", "whatsapp", "manage_leads", "delete_leads"]
+    ? ["ai_pitch", "deep_research", "whatsapp", "send_email", "manage_leads", "delete_leads"]
     : role === "SALES"
       ? [...new Set([...rawPermissions, "manage_leads"])]
       : rawPermissions;

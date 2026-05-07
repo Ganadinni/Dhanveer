@@ -24,12 +24,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { status, assignedToId, notes } = await req.json();
+  const { status, assignedToId, notes, tags } = await req.json();
 
   const data: Record<string, unknown> = {};
   if (status !== undefined) data.status = status;
   if (assignedToId !== undefined) data.assignedToId = assignedToId || null;
   if (notes !== undefined) data.notes = notes;
+  if (Array.isArray(tags)) data.tags = tags;
 
   const lead = await db.lead.update({ where: { id }, data });
   return NextResponse.json({ data: lead });

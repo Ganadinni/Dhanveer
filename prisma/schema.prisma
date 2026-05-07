@@ -76,6 +76,7 @@ model Lead {
   status       LeadStatus @default(NEW)
   source       LeadSource @default(MANUAL)
   notes        String?
+  tags         String[] @default([])   // Cafe | QSR Chain | Key Account | Hotels/Bakery/Restaurant | PAN Asian | Dessert Stores | Industrial | Chef/Consultant | Distributors | Export
   googlePlaceId String?   @unique
 
   assignedToId String?

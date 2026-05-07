@@ -16,7 +16,7 @@ export async function GET() {
 
   // ADMIN implicitly has all features
   const effectivePermissions = user.role === "ADMIN"
-    ? ["ai_pitch", "whatsapp", "manage_leads", "delete_leads"]
+    ? ["ai_pitch", "deep_research", "whatsapp", "send_email", "manage_leads", "delete_leads"]
     : user.role === "SALES"
       ? [...new Set([...user.permissions, "manage_leads"])]
       : user.permissions;
