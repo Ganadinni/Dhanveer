@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run db:generate && npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["bom1"],
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}

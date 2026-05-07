@@ -1,0 +1,94 @@
+// Dhanveer — Sales Intelligence OS
+// Prisma schema for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum LeadSource {
+  GOOGLE_PLACES
+  WHATSAPP
+  MANUAL
+  REFERRAL
+  WEBSITE
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  SALES
+  VIEWER
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole @default(SALES)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads     Lead[]   @relation("AssignedLeads")
+
+  @@map("users")
+}
+
+model Lead {
+  id           String     @id @default(cuid())
+  businessName String
+  ownerName    String?
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  state        String?
+  pincode      String?
+  status       LeadStatus @default(NEW)
+  source       LeadSource @default(MANUAL)
+  notes        String?
+  googlePlaceId String?   @unique
+
+  assignedToId String?
+  assignedTo   User?      @relation("AssignedLeads", fields: [assignedToId], references: [id])
+
+  activities   LeadActivity[]
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([status])
+  @@index([city])
+  @@index([assignedToId])
+  @@map("leads")
+}
+
+model LeadActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      String   // "CALL" | "WHATSAPP" | "EMAIL" | "VISIT" | "NOTE"
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@map("lead_activities")
+}
