@@ -8,7 +8,11 @@ async function main() {
 
   const admin = await db.user.upsert({
     where: { email: "admin@theteaplanet.com" },
-    update: {},
+    update: {
+      role: "ADMIN",
+      passwordHash: hash,
+      name: "Admin",
+    },
     create: {
       email: "admin@theteaplanet.com",
       name: "Admin",
@@ -17,7 +21,7 @@ async function main() {
     },
   });
 
-  console.log("Seeded admin user:", admin.email);
+  console.log("Seeded admin:", admin.email, "role:", admin.role);
 }
 
 main()
