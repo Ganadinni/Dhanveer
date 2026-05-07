@@ -125,12 +125,12 @@ Produce a JSON object with these keys:
 {
   "businessProfile": "2-3 sentence profile: what type of business this likely is, their likely customer base, scale",
   "socialMedia": "Instagram handle guesses + search link, website if found, Zomato/Swiggy presence",
-  "menuInsights": "What menu items they likely have. What beverage gaps exist. What's missing that we can fill",
-  "seasonalOpportunities": "Given the current month (${today}), what seasonal drinks/trends should we push? Summer? Festive season? Wedding season?",
-  "recommendedProducts": "Specific The Tea Planet products (use real category names and product names) that fit this business. Be specific — not generic",
-  "recipeIdeas": "2-3 concrete recipe ideas using TTP products tailored to their menu. E.g. 'Brown Sugar Boba Taro Shake using our Taro Premix + Brown Sugar Syrup'",
-  "areaInsights": "F&B landscape in ${location || "their city"}. Competition level. What's trending locally. Avg consumer spend",
-  "pitchAngles": "Top 3 specific sales angles to use with this business. Be tactical",
+  "menuInsights": "What menu items they likely have. What specialty beverages would complement what they already serve well — frame as additions, not gaps",
+  "seasonalOpportunities": "Given the current month (${today}), what seasonal drinks/trends would add well to their offering? Summer? Festive season? Wedding season?",
+  "recommendedProducts": "Specific The Tea Planet products (use real category names and product names) that would sit naturally alongside this business's existing menu. Be specific — not generic",
+  "recipeIdeas": "2-3 concrete recipe ideas using TTP products that would complement their existing menu well. E.g. 'Brown Sugar Boba Taro Shake using our Taro Premix + Brown Sugar Syrup'",
+  "areaInsights": "F&B landscape in ${location || "their city"}. What's trending locally. Avg consumer spend. What similar businesses in the area are doing well with specialty beverages",
+  "pitchAngles": "Top 3 respectful, growth-focused sales angles for this business. Lead with appreciation for what they've built, then suggest additions. Never frame as fixing a problem or filling a gap.",
   "quickLinks": ["Google: https://www.google.com/search?q=${encodeURIComponent(businessName + " " + location)}", "Instagram: https://www.instagram.com/${businessName.toLowerCase().replace(/[^a-z0-9]/g, "")}", "Zomato: https://www.zomato.com/${(location || "india").toLowerCase().split(",")[0].trim().replace(/\s+/g, "-")}"],
   "summary": "2-sentence exec summary for the sales rep: what's the opportunity and what's the best opening line"
 }`;

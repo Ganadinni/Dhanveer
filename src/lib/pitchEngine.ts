@@ -159,7 +159,7 @@ async function generateWithClaude(
     })
     .join("\n\n");
 
-  const systemPrompt = `You are a senior sales professional at The Tea Planet who has personally visited and won over hundreds of F&B businesses across India. You understand their world — the pressure to keep customers coming back, menu fatigue, the constant search for something that sells itself.
+  const systemPrompt = `You are a senior sales professional at The Tea Planet who has personally visited and won over hundreds of F&B businesses across India. You genuinely respect the businesses you write to — they've built something real, and your job is to show them how to grow it further, not to point out what they're doing wrong.
 
 About The Tea Planet:
 - India's first bubble tea manufacturer, since 2011, based in Hyderabad
@@ -170,16 +170,19 @@ About The Tea Planet:
 - Direct tea sourcing from Assam, Darjeeling, Kerala, Sri Lanka
 - Phone: +91-8886277713 | www.theteaplanet.com
 
-Writing rules — follow without exception:
-- No markdown. No asterisks, no hashtags, no dashes as bullets. Plain flowing text only.
-- No emojis in emails. WhatsApp can have one or two if they fit the tone — nothing celebratory or salesy.
+Tone rules — follow without exception:
+- Always write from a place of genuine respect for what the business has built.
+- Frame every product suggestion as something that adds to their strengths, never as filling a gap or fixing a problem. Say "this would sit well alongside..." not "you're missing..." or "your menu stops at..."
+- Never imply the business is behind, incomplete, or that others are doing better than them.
+- Appreciation first — acknowledge what makes their place worth writing to. One sentence, specific, not generic.
+- No markdown. No asterisks, no hashtags, no bullet dashes. Plain flowing text only.
+- No emojis in emails. WhatsApp can have one if it fits — nothing salesy or celebratory.
 - Never open with "I hope this email finds you well" or any variation.
-- Don't name the product first — describe what changes for their customer and their margins.
-- Create a specific tension: what gap in their menu are they sitting on? What are similar businesses in their city already doing?
-- Sound like someone who walked into their place, looked around, and formed a specific opinion.
-- Email: three tight paragraphs. Subject line should read like a thought, not an ad. No sign-off clichés.
-- WhatsApp: under 140 words. Peer-to-peer, not pitch-to-prospect. One specific observation, one easy ask.
-- Close with something concrete and low-effort for them: "I can courier three samples to your place this week, no paperwork."`;
+- Don't name the product first — describe what it adds to the customer experience and to their margins.
+- Sound like someone who genuinely thought about their business before writing, not someone sending a broadcast.
+- Email: three paragraphs. Subject line reads like a thought, not an ad. No clichéd sign-offs.
+- WhatsApp: under 140 words. Warm peer-to-peer tone. One specific thought about their business, one easy ask.
+- Close with something concrete and low-effort: "I can courier samples to your place this week — no paperwork involved."`;
 
   const userPrompt = `Write a personalised outreach for this F&B business:
 
@@ -247,22 +250,22 @@ function generateFromTemplate(lead: Lead, recommended: RecommendedProduct[]): Pi
 
   const pitch = `Dear ${firstName},
 
-The beverage category is quietly becoming the highest-margin line on any F&B menu — and most businesses in ${location || "your area"} are only scratching the surface of what's possible. At The Tea Planet, we've been helping cafes and restaurants like yours add 200%+ margin drinks to their menu since 2011, without any new equipment or a long ramp-up time.
+Thank you for building ${lead.businessName}${location ? ` in ${location}` : ""} — it takes real commitment to run a good F&B place and keep customers coming back. We work with cafes and restaurants across India on adding high-margin specialty beverages to their menu, and we thought what we do could complement what you've already built well.
 
-What we'd suggest for ${lead.businessName}: ${productLines}
+Based on what we know about ${lead.businessName}, here is what we'd suggest exploring: ${productLines}
 
-Each of these can be ready to serve within a week. The cost per cup runs between Rs.8 and Rs.15. The selling price is yours to set — most of our partners charge Rs.80 to Rs.150. We'll courier a sample kit to your address this week with no paperwork. If you like what you taste, we go from there.
+These can sit naturally alongside your existing menu and be ready to serve within a week. The cost per cup is between Rs.8 and Rs.15, and our partners typically price them at Rs.80 to Rs.150 — the margins hold up well. We'd be happy to courier a sample kit to your place this week, no paperwork needed. Have a look, and if it makes sense we can take it from there.
 
 The Tea Planet | +91-8886277713 | www.theteaplanet.com`;
 
-  const subject = `A beverage idea for ${lead.businessName}`;
+  const subject = `A beverage idea worth exploring for ${lead.businessName}`;
 
   const prodList = recommended.slice(0, 3).map((p) => p.name).join(", ");
   const whatsappMessage = `Hi ${firstName},
 
-Came across ${lead.businessName}${location ? ` in ${location}` : ""} and wanted to share something. We work with cafes and restaurants on adding high-margin beverages to their menu — things like ${prodList}. Cost per cup is under Rs.15, selling price is typically Rs.80-150.
+Really appreciate what you've built at ${lead.businessName}${location ? ` in ${location}` : ""}. We work with similar places on adding specialty beverages to their menu — ${prodList} — and thought these could work well alongside what you already offer.
 
-No equipment needed, ready to serve in a week. Happy to courier samples to your place.
+Cost per cup is under Rs.15, typically priced at Rs.80-150. No new equipment needed, ready in a week. Happy to send samples over.
 
 The Tea Planet — +91-8886277713`;
 
