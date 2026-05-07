@@ -32,7 +32,7 @@ const PRESET_QUERIES: { label: string; query: string }[] = [
   { label: "Bars & Lounges", query: "bar lounge pub" },
 ];
 
-export function DiscoverClient() {
+export function DiscoverClient({ isConfigured }: { isConfigured: boolean }) {
   const [searches, setSearches] = useState<DiscoverySearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -46,8 +46,6 @@ export function DiscoverClient() {
   const [tagsToApply, setTagsToApply] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
-
-  const isConfigured = true; // server will return 500 if key missing
 
   useEffect(() => {
     fetch("/api/admin/discover")
@@ -146,8 +144,8 @@ export function DiscoverClient() {
         </button>
       </div>
 
-      {/* API key warning */}
-      {!process.env.NEXT_PUBLIC_PLACES_CONFIGURED && (
+      {/* API key warning — only shown when key is genuinely missing */}
+      {!isConfigured && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           <strong>Setup required:</strong> Add <code className="rounded bg-amber-100 px-1">GOOGLE_PLACES_API_KEY</code> to your Vercel environment variables to enable discovery.
           Get a key from <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console</a> → Enable Places API (New).
