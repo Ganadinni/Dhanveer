@@ -14,6 +14,7 @@ const salesItems = [
 const adminItems = [
   { href: "/admin", label: "Admin Panel", icon: "⚙️", exact: true },
   { href: "/admin/users", label: "Users", icon: "👤" },
+  { href: "/admin/discover", label: "Discover Leads", icon: "🔍" },
   { href: "/admin/reports", label: "Reports", icon: "📋" },
   { href: "/admin/knowledge", label: "Product Knowledge", icon: "📦" },
   { href: "/admin/settings", label: "Integrations", icon: "🔌" },

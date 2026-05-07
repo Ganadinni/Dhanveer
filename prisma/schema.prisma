@@ -214,3 +214,21 @@ model LeadScore {
 
   @@map("lead_scores")
 }
+
+// ─── Lead Discovery ───────────────────────────────────────────────────────────
+
+model DiscoverySearch {
+  id              String    @id @default(cuid())
+  label           String
+  cities          String[]
+  query           String    // e.g. "cafe restaurant bakery bubble tea"
+  tagsToApply     String[]  @default([])  // auto-tag imported leads
+  isActive        Boolean   @default(true)
+  lastRunAt       DateTime?
+  lastFoundCount  Int       @default(0)
+  totalAdded      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("discovery_searches")
+}
