@@ -126,6 +126,7 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   const [research, setResearch]       = useState<ResearchResult | null>(null);
   const [researching, setResearching] = useState(false);
   const [researchOpen, setResearchOpen] = useState(false);
+  const [researchError, setResearchError] = useState("");
 
   const waConversation = activities.filter((a) => a.type === "WHATSAPP_SENT" || a.type === "WHATSAPP_RECEIVED");
   const emailHistory   = activities.filter((a) => a.type === "EMAIL");
@@ -161,20 +162,25 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   }
 
   async function runResearch() {
-    setResearching(true); setResearchOpen(true);
-    const res = await fetch("/api/ai/research", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ leadId: lead.id }),
-    });
-    if (res.ok) {
+    setResearching(true); setResearchOpen(true); setResearchError(""); setResearch(null);
+    try {
+      const res = await fetch("/api/ai/research", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id }),
+      });
       const data = await res.json();
-      setResearch(data);
-      // Refresh activity list to show research log
-      setActivities((prev) => [{
-        id: crypto.randomUUID(), type: "NOTE",
-        note: `🔍 Deep Research completed. ${data.summary ?? ""}`,
-        createdAt: new Date().toISOString(),
-      }, ...prev]);
+      if (res.ok) {
+        setResearch(data);
+        setActivities((prev) => [{
+          id: crypto.randomUUID(), type: "NOTE",
+          note: `🔍 Deep Research completed. ${data.summary ?? ""}`,
+          createdAt: new Date().toISOString(),
+        }, ...prev]);
+      } else {
+        setResearchError(data.error ?? `Research failed (${res.status})`);
+      }
+    } catch {
+      setResearchError("Network error — could not reach the server");
     }
     setResearching(false);
   }
@@ -426,6 +432,10 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
                 <div className="flex items-center gap-3 py-6 px-5 justify-center">
                   <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
                   <p className="text-sm text-slate-500">Researching {lead.businessName} online…</p>
+                </div>
+              ) : researchError ? (
+                <div className="px-5 py-4">
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-3">{researchError}</p>
                 </div>
               ) : research ? (
                 <div className="p-5 space-y-4">

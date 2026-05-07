@@ -4,8 +4,6 @@ import { userHasPermission } from "@/lib/permissions";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
-const client = new Anthropic();
-
 // Optional: Brave Search for real web results (set BRAVE_API_KEY env var)
 async function webSearch(query: string): Promise<string> {
   const key = process.env.BRAVE_API_KEY;
@@ -39,6 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "AI not configured — add ANTHROPIC_API_KEY to environment variables" }, { status: 503 });
   }
 
+  const client = new Anthropic();
   const { leadId } = await req.json();
   if (!leadId) return NextResponse.json({ error: "leadId required" }, { status: 400 });
 
