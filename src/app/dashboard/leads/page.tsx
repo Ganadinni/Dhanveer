@@ -29,6 +29,12 @@ export default async function LeadsPage() {
   return (
     <div className="flex flex-col h-full">
       <Header title="Leads" subtitle={`${leads.length} ${isAdmin ? "total" : "assigned"} leads`}>
+  <Link
+            href="/dashboard/leads/import-csv"
+            className="text-sm font-medium px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+          >
+            Import CSV / Excel
+          </Link>
         {isAdmin && (
           <Link
             href="/dashboard/leads/import"
