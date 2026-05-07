@@ -40,14 +40,15 @@ enum UserRole {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  role      UserRole @default(SALES)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  role         UserRole @default(SALES)
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  leads     Lead[]   @relation("AssignedLeads")
+  leads        Lead[]   @relation("AssignedLeads")
 
   @@map("users")
 }

@@ -1,24 +1,35 @@
-/**
- * Auth utilities — placeholder until NextAuth or Clerk is wired up.
- * Import and expand this file when adding authentication.
- */
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
+import { authConfig } from "@/lib/auth.config";
 
-export type UserRole = "ADMIN" | "SALES" | "VIEWER";
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
 
-export interface SessionUser {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-}
+        const user = await db.user.findUnique({
+          where: { email: credentials.email as string },
+        });
 
-/** Returns the current server session. Stub — implement with NextAuth. */
-export async function getServerSession(): Promise<SessionUser | null> {
-  // TODO: replace with: return await auth() from next-auth/v5 or Clerk
-  return null;
-}
+        if (!user || !user.passwordHash) return null;
 
-/** Returns true if the user has admin privileges. */
-export function isAdmin(user: SessionUser | null): boolean {
-  return user?.role === "ADMIN";
-}
+        const valid = await bcrypt.compare(
+          credentials.password as string,
+          user.passwordHash
+        );
+
+        if (!valid) return null;
+
+        return { id: user.id, email: user.email, name: user.name, role: user.role };
+      },
+    }),
+  ],
+});
