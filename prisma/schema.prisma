@@ -53,6 +53,7 @@ model User {
   name         String
   role         UserRole @default(SALES)
   passwordHash String?
+  permissions  String[] @default([])   // feature flags: ai_pitch, whatsapp, manage_leads, delete_leads
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -14,12 +14,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const { name, role, password } = await req.json();
+  const { name, role, password, permissions } = await req.json();
 
   const data: Record<string, unknown> = {};
   if (name) data.name = name.trim();
   if (role) data.role = role;
   if (password) data.passwordHash = await bcrypt.hash(password, 10);
+  if (Array.isArray(permissions)) data.permissions = permissions;
 
   const user = await db.user.update({
     where: { id },
@@ -29,6 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       name: true,
       email: true,
       role: true,
+      permissions: true,
       createdAt: true,
       _count: { select: { leads: true } },
     },

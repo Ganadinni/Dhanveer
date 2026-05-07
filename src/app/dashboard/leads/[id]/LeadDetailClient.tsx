@@ -71,11 +71,15 @@ interface PitchResult {
 
 interface UserOption { id: string; name: string; role: string; }
 
-export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
+export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermissions = [] }: {
   lead: Lead;
   isAdmin?: boolean;
   users?: UserOption[];
+  userPermissions?: string[];
 }) {
+  const canUseAIPitch = userPermissions.includes("ai_pitch");
+  const canUseWhatsApp = userPermissions.includes("whatsapp");
+  const canDeleteLeads = isAdmin || userPermissions.includes("delete_leads");
   const router = useRouter();
   const [status, setStatus] = useState(lead.status);
   const [saving, setSaving] = useState(false);
@@ -231,7 +235,7 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
             <h2 className="text-lg font-semibold text-slate-900">{lead.businessName}</h2>
             {isAdmin && <p className="text-sm text-slate-400">Source: {lead.source.replace(/_/g, " ")}</p>}
           </div>
-          {isAdmin && (
+          {canDeleteLeads && (
             <button onClick={deleteLead} className="text-xs text-red-500 hover:text-red-700">
               Delete lead
             </button>
@@ -294,7 +298,16 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
       </div>
 
       {/* AI Pitch Builder */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {!canUseAIPitch && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-3">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <p className="text-sm font-medium text-slate-700">AI Sales Intelligence</p>
+            <p className="text-xs text-slate-400">Ask your admin to enable AI Pitch & Scoring for your account.</p>
+          </div>
+        </div>
+      )}
+      {canUseAIPitch && <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-indigo-50">
           <div className="flex items-center gap-2">
             <span className="text-lg">🤖</span>
@@ -441,10 +454,19 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
             )}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* WhatsApp */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {!canUseWhatsApp && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-3">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <p className="text-sm font-medium text-slate-700">WhatsApp Messaging</p>
+            <p className="text-xs text-slate-400">Ask your admin to enable WhatsApp access for your account.</p>
+          </div>
+        </div>
+      )}
+      {canUseWhatsApp && <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100 bg-green-50">
           <span className="text-green-600 text-base">💬</span>
           <p className="text-sm font-medium text-green-800">WhatsApp</p>
@@ -506,7 +528,7 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [] }: {
             </>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* Tasks */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">

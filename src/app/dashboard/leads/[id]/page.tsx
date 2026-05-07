@@ -12,7 +12,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const session = await auth();
   const isAdmin = session?.role === "ADMIN";
 
-  const [lead, users] = await Promise.all([
+  const [lead, users, currentUser] = await Promise.all([
     db.lead.findUnique({
       where: { id },
       include: {
@@ -25,9 +25,21 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     isAdmin
       ? db.user.findMany({ select: { id: true, name: true, role: true }, orderBy: { name: "asc" } })
       : Promise.resolve([]),
+    session?.id
+      ? db.user.findUnique({ where: { id: session.id }, select: { role: true, permissions: true } })
+      : Promise.resolve(null),
   ]);
 
   if (!lead) notFound();
+
+  // Compute effective permissions (same logic as /api/me)
+  const rawPermissions = currentUser?.permissions ?? [];
+  const role = currentUser?.role ?? session?.role ?? "VIEWER";
+  const userPermissions: string[] = isAdmin
+    ? ["ai_pitch", "whatsapp", "manage_leads", "delete_leads"]
+    : role === "SALES"
+      ? [...new Set([...rawPermissions, "manage_leads"])]
+      : rawPermissions;
 
   return (
     <div className="flex flex-col h-full">
@@ -41,6 +53,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           lead={JSON.parse(JSON.stringify(lead))}
           isAdmin={isAdmin}
           users={JSON.parse(JSON.stringify(users))}
+          userPermissions={userPermissions}
         />
       </div>
     </div>

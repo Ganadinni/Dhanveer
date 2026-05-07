@@ -1,5 +1,6 @@
 import { getSession as auth } from "@/lib/session";
 import { db } from "@/lib/db";
+import { userHasPermission } from "@/lib/permissions";
 import { NextRequest, NextResponse } from "next/server";
 
 const GRAPH_URL = "https://graph.facebook.com/v19.0";
@@ -7,6 +8,10 @@ const GRAPH_URL = "https://graph.facebook.com/v19.0";
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!(await userHasPermission(session.id, session.role, "whatsapp"))) {
+    return NextResponse.json({ error: "You don't have access to WhatsApp messaging. Ask your admin to enable it." }, { status: 403 });
+  }
 
   const { leadId, to, message } = await req.json();
   if (!to || !message?.trim()) {
