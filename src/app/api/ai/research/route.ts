@@ -4,6 +4,35 @@ import { userHasPermission } from "@/lib/permissions";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 
+async function buildProductCatalog(): Promise<string> {
+  const categories = await db.productCategory.findMany({
+    orderBy: { sortOrder: "asc" },
+    include: {
+      products: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+        select: { name: true, keyBenefits: true, targetCustomers: true, usages: true, packSize: true, moq: true },
+      },
+    },
+  });
+  return categories
+    .filter((c) => c.products.length > 0)
+    .map((c) => {
+      const lines = c.products.map((p) => {
+        const details = [
+          p.keyBenefits,
+          p.targetCustomers ? `Best for: ${p.targetCustomers}` : null,
+          p.usages ? `Use: ${p.usages}` : null,
+          p.packSize ? `Pack: ${p.packSize}` : null,
+          p.moq ? `MOQ: ${p.moq}` : null,
+        ].filter(Boolean).join(" | ");
+        return `  • ${p.name}${details ? ` — ${details}` : ""}`;
+      });
+      return `${c.name} (${c.products.length} products):\n${lines.join("\n")}`;
+    })
+    .join("\n\n");
+}
+
 // Optional: Serper.dev for real web results (set SERPER_API_KEY env var)
 async function webSearch(query: string): Promise<string> {
   const key = process.env.SERPER_API_KEY;
@@ -42,10 +71,13 @@ export async function POST(req: NextRequest) {
   const { leadId } = await req.json();
   if (!leadId) return NextResponse.json({ error: "leadId required" }, { status: 400 });
 
-  const lead = await db.lead.findUnique({
-    where: { id: leadId },
-    include: { activities: { orderBy: { createdAt: "desc" }, take: 10 }, score: true },
-  });
+  const [lead, productCatalog] = await Promise.all([
+    db.lead.findUnique({
+      where: { id: leadId },
+      include: { activities: { orderBy: { createdAt: "desc" }, take: 10 }, score: true },
+    }),
+    buildProductCatalog(),
+  ]);
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
   const location = [lead.city, lead.state].filter(Boolean).join(", ");
@@ -54,7 +86,7 @@ export async function POST(req: NextRequest) {
     .map((a) => `${a.type}: ${a.note?.slice(0, 100)}`)
     .join("\n");
 
-  // Run web searches if Brave API key is available
+  // Run web searches if Serper API key is available
   const [webResults1, webResults2] = await Promise.all([
     webSearch(`${businessName} ${location} restaurant cafe menu`),
     webSearch(`${businessName} ${location} instagram`),
@@ -66,16 +98,8 @@ export async function POST(req: NextRequest) {
 
 Your job is to research an F&B business and produce actionable intelligence for a sales rep who will pitch our products.
 
-The Tea Planet product categories (for your reference):
-- Beverage Premixes: Bubble tea, milk tea, coffee, masala chai, fruit teas (40+ flavours)
-- Tea Concentrates: Black, Green, Matcha, Mojito, Hojicha (30ml per 150-200ml cup)
-- Syrups & Bases: Brown sugar, caramel, lychee, passion fruit, 15+ varieties
-- Popping Boba: Mango, strawberry, lychee, passion fruit, blueberry (burst-on-bite)
-- Tapioca Pearls: Classic, mini, instant (ready in 5 mins)
-- Milkshake & Lassi Mixes: 12+ flavours
-- Mocktail & Lemonade Mixes: 15+ trendy flavours
-- Boba Desserts: Taro jar cakes, matcha Swiss rolls, 19+ products
-- Industrial Ingredients: 20kg bulk packs for large operators
+THE TEA PLANET — FULL PRODUCT CATALOG (live from our database):
+${productCatalog}
 
 USPs: 200%+ gross margins, no special equipment needed, go live in 7 days, FSSC 22000/FSSAI/HALAL/APEDA certified, 500+ partners across India.
 
