@@ -195,22 +195,22 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId: lead.id }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setResearch(data);
+      let data: Record<string, string> | null = null;
+      try { data = await res.json(); } catch { /* non-JSON response */ }
+      if (res.ok && data) {
+        setResearch(data as unknown as ResearchResult);
         setActivities((prev) => [{
           id: crypto.randomUUID(), type: "NOTE",
-          note: `🔍 Deep Research completed. ${data.summary ?? ""}`,
+          note: `Deep Research completed. ${(data as Record<string, string>).summary ?? ""}`,
           createdAt: new Date().toISOString(),
         }, ...prev]);
-        // Refresh score since research triggers re-scoring on the server
         fetch("/api/ai/score", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ leadId: lead.id }) })
           .then(r => r.ok ? r.json() : null).then(s => { if (s) setLeadScore(s); }).catch(() => null);
       } else {
-        setResearchError(data.error ?? `Research failed (${res.status})`);
+        setResearchError(data?.error ?? `Research failed (HTTP ${res.status}) — check that ANTHROPIC_API_KEY is set in Vercel`);
       }
-    } catch {
-      setResearchError("Network error — could not reach the server");
+    } catch (err) {
+      setResearchError(`Could not reach server — ${err instanceof Error ? err.message : "unknown error"}`);
     }
     setResearching(false);
   }
