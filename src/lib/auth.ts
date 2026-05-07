@@ -4,12 +4,12 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/lib/auth.config";
 
-// NextAuth v5 uses AUTH_SECRET; fall back to NEXTAUTH_SECRET for Vercel deployments
-const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "dhanveer-fallback-secret-change-in-prod";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   secret,
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
