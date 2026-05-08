@@ -1,5 +1,5 @@
 // Webhook receiver for events from Rasik → Dhanveer
-// Rasik should POST to: https://dhanveer.vercel.app/api/rasik/webhook
+// Rasik should POST to: https://dhanveer-izqx-git-claude-setup-ve-745a7f-founder-9869s-projects.vercel.app/api/rasik/webhook
 // with header: x-rasik-secret: <RASIK_WEBHOOK_SECRET env var>
 
 import { processRasikEvent } from "@/lib/rasik";

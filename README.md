@@ -105,7 +105,7 @@ In Vercel, add these under **Project → Settings → Environment Variables**:
 | Variable                     | Required | Description                                    |
 |------------------------------|----------|------------------------------------------------|
 | `DATABASE_URL`               | ✅       | PostgreSQL connection string                   |
-| `NEXT_PUBLIC_APP_URL`        | ✅       | Full app URL (e.g. `https://dhanveer.vercel.app`) |
+| `NEXT_PUBLIC_APP_URL`        | ✅       | Full app URL (e.g. `https://dhanveer-izqx-git-claude-setup-ve-745a7f-founder-9869s-projects.vercel.app`) |
 | `NEXTAUTH_SECRET`            | ✅       | Random secret — `openssl rand -base64 32`      |
 | `NEXTAUTH_URL`               | ✅       | Same as `NEXT_PUBLIC_APP_URL`                  |
 | `GOOGLE_PLACES_API_KEY`      | —        | Server-side only. For lead scraping.           |
