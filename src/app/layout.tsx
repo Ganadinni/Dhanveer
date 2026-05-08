@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "Dhanveer — Sales Intelligence OS | The Tea Planet",
   description:
     "Internal Sales Intelligence Operating System for The Tea Planet. Manage leads, track pipeline, and close deals faster.",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
 };
 
 export default function RootLayout({

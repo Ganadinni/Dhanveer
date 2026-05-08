@@ -71,7 +71,7 @@ export function SalesChat() {
       {/* Floating button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-green-600 shadow-lg hover:bg-green-700 transition-colors"
+        className="fixed bottom-20 lg:bottom-5 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-green-600 shadow-lg hover:bg-green-700 transition-colors"
         title="Sales Intelligence Chat"
       >
         {open ? (
@@ -87,8 +87,8 @@ export function SalesChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 right-5 z-50 flex w-[380px] flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
-          style={{ height: "520px" }}>
+        <div className="fixed bottom-20 right-3 z-50 flex flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
+          style={{ width: "min(380px, calc(100vw - 24px))", height: "min(520px, calc(100dvh - 160px))" }}>
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-green-600">
             <div>

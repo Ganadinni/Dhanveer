@@ -48,7 +48,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           ← Back to Leads
         </Link>
       </Header>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden lg:overflow-hidden overflow-y-auto">
         <LeadDetailClient
           lead={JSON.parse(JSON.stringify(lead))}
           isAdmin={isAdmin}

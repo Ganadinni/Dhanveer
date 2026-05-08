@@ -251,10 +251,10 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   const tierIcon  = leadScore?.tier === "HOT" ? "🔥" : leadScore?.tier === "WARM" ? "☀️" : "❄️";
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col lg:flex-row h-full">
 
       {/* ── LEFT PANEL — Lead card ─────────────────────────────────────────────── */}
-      <div className="w-72 shrink-0 border-r border-slate-200 bg-white flex flex-col overflow-y-auto">
+      <div className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white flex flex-col overflow-y-auto max-h-[45vh] lg:max-h-none">
 
         {/* Name + score */}
         <div className="px-4 pt-4 pb-3 border-b border-slate-100">
@@ -367,13 +367,13 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
       </div>
 
       {/* ── RIGHT PANEL — Workflow tabs ────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-slate-50">
 
         {/* Tab bar */}
         <div className="bg-white border-b border-slate-200 flex overflow-x-auto shrink-0">
           {TABS.map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
+              className={`flex items-center gap-1 px-2.5 md:px-4 py-3 text-[11px] md:text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.key ? "border-green-500 text-green-700 bg-green-50/50" : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}>
               <span>{tab.icon}</span>
