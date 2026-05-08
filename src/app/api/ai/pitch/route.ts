@@ -16,6 +16,12 @@ export async function POST(req: NextRequest) {
   const lead = await db.lead.findUnique({ where: { id: leadId } });
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
-  const pitch = await generatePitch(lead);
-  return NextResponse.json(pitch);
+  try {
+    const pitch = await generatePitch(lead);
+    return NextResponse.json(pitch);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[Pitch] Failed:", message);
+    return NextResponse.json({ error: `Pitch generation failed: ${message}` }, { status: 500 });
+  }
 }

@@ -145,9 +145,22 @@ Produce a JSON object with these keys:
 
   const rawText = (message.content[0] as { type: string; text: string }).text.trim();
   const jsonText = rawText.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
-  const research: ResearchData = JSON.parse(jsonText);
 
-  // Persist to DB + log activity + re-score
+  let research: ResearchData;
+  try {
+    research = JSON.parse(jsonText);
+  } catch {
+    // Claude returned non-JSON — wrap the raw text into a usable shape so the
+    // user still sees something rather than a hard error
+    research = {
+      businessProfile: rawText.slice(0, 500),
+      socialMedia: "", menuInsights: "", seasonalOpportunities: "",
+      recommendedProducts: "", recipeIdeas: "", areaInsights: "",
+      pitchAngles: "", quickLinks: [],
+      summary: "Research completed but response could not be parsed as JSON. Raw content shown in Business Profile.",
+    };
+  }
+
   await Promise.all([
     db.lead.update({
       where: { id: leadId },
@@ -157,12 +170,11 @@ Produce a JSON object with these keys:
       data: {
         leadId,
         type: "NOTE",
-        note: `🔍 Deep Research run by ${byName}. Summary: ${research.summary ?? ""}`,
+        note: `Deep Research run by ${byName}. Summary: ${research.summary ?? ""}`,
       },
     }),
   ]);
 
-  // Re-score based on fresh data
   await scoreLead(leadId);
 
   return research;

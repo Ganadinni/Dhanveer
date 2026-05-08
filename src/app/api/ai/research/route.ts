@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
-      { error: "AI not configured — add ANTHROPIC_API_KEY to environment variables" },
+      { error: "ANTHROPIC_API_KEY is not set in environment variables" },
       { status: 503 }
     );
   }
@@ -19,8 +19,13 @@ export async function POST(req: NextRequest) {
   const { leadId } = await req.json();
   if (!leadId) return NextResponse.json({ error: "leadId required" }, { status: 400 });
 
-  const research = await runLeadResearch(leadId, session.name);
-  if (!research) return NextResponse.json({ error: "Lead not found or research failed" }, { status: 404 });
-
-  return NextResponse.json(research);
+  try {
+    const research = await runLeadResearch(leadId, session.name);
+    if (!research) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    return NextResponse.json(research);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[Research] Failed:", message);
+    return NextResponse.json({ error: `Research failed: ${message}` }, { status: 500 });
+  }
 }
