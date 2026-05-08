@@ -13,7 +13,10 @@ export async function POST(req: NextRequest) {
   const { leadId } = await req.json();
   if (!leadId) return NextResponse.json({ error: "leadId required" }, { status: 400 });
 
-  const lead = await db.lead.findUnique({ where: { id: leadId } });
+  const lead = await db.lead.findUnique({
+    where: { id: leadId },
+    include: { activities: { orderBy: { createdAt: "desc" }, take: 20 } },
+  });
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
   try {

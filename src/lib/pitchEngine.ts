@@ -5,11 +5,13 @@ import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/lib/db";
 
 interface Lead {
+  id?: string;
   businessName: string;
   ownerName?: string | null;
   city?: string | null;
   state?: string | null;
   notes?: string | null;
+  activities?: { type: string; note?: string | null; createdAt: Date }[];
 }
 
 interface PitchResult {
@@ -131,6 +133,36 @@ export async function generatePitch(lead: Lead): Promise<PitchResult> {
   return generateFromTemplate(lead, recommended);
 }
 
+function buildRelationshipContext(activities: { type: string; note?: string | null; createdAt: Date }[], notes: string | null | undefined): string {
+  if (!activities || activities.length === 0) return "";
+
+  const allText = [notes ?? "", ...activities.map((a) => a.note ?? "")].join(" ").toLowerCase();
+  const purchaseKeywords = ["ordered", "order", "purchased", "buying", "bought", "stock", "reorder", "invoice", "supply", "supplies", "delivering", "using"];
+  const sampleKeywords = ["sample", "samples", "trial", "tasting", "tasted", "tried", "testing"];
+
+  const hasPurchase = purchaseKeywords.some((k) => allText.includes(k));
+  const hasSample = sampleKeywords.some((k) => allText.includes(k));
+
+  const recentNotes = activities
+    .filter((a) => a.note && a.note.length > 10)
+    .slice(0, 6)
+    .map((a) => {
+      const date = new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+      return `[${date}] ${a.type}: ${a.note?.slice(0, 120)}`;
+    });
+
+  const parts: string[] = [];
+  if (hasPurchase) parts.push("RELATIONSHIP: Existing customer — they are already buying from us. Focus on cross-sell and upsell only.");
+  else if (activities.length > 0) parts.push("RELATIONSHIP: Previously contacted — we have spoken before but no purchase yet.");
+  else parts.push("RELATIONSHIP: New lead — no prior contact.");
+
+  if (hasSample) parts.push("SAMPLE HISTORY: Samples have been discussed or sent — do NOT ask if they need samples. Instead acknowledge the sample naturally or skip it.");
+  if (recentNotes.length > 0) parts.push(`INTERACTION HISTORY:\n${recentNotes.join("\n")}`);
+  if (notes) parts.push(`TEAM NOTES: ${notes}`);
+
+  return parts.join("\n\n");
+}
+
 async function generateWithClaude(
   lead: Lead,
   allProducts: Array<{ id: string; name: string; sku: string | null; category: { name: string }; keyBenefits: string | null; targetCustomers: string | null; usages: string | null; mrp: number | null; dealerPrice: number | null; moq: string | null; packSize: string | null }>
@@ -182,14 +214,22 @@ Tone rules — follow without exception:
 - Sound like someone who genuinely thought about their business before writing, not someone sending a broadcast.
 - Email: three paragraphs. Subject line reads like a thought, not an ad. No clichéd sign-offs.
 - WhatsApp: under 140 words. Warm peer-to-peer tone. One specific thought about their business, one easy ask.
-- Close with something concrete and low-effort: "I can courier samples to your place this week — no paperwork involved."`;
+- NEVER ask "Do you need samples?" or "Would you like to try?" — this is a passive close that gets ignored. Instead, offer to courier a specific product and tell them exactly what to expect: flavour profile, cup cost, and who's buying it nearby.
+- For existing customers: open by acknowledging what's working for them, then introduce the next product as a natural next step — not a pitch.
+- For leads where samples were already sent: do NOT mention samples again. Open with market intelligence instead — what's selling well, what similar venues are adding. Let them bring it up.
+- We take a strong position: we know what works for their business type, we've seen it succeed elsewhere, and we're writing to share that — not to ask for permission.
+- Close with something concrete and rep-initiated: "I'll have samples with you by Thursday" not "let me know if you'd like samples".`;
+
+  const relationshipContext = buildRelationshipContext(lead.activities ?? [], lead.notes);
 
   const userPrompt = `Write a personalised outreach for this F&B business:
 
 Business: ${lead.businessName}
-Owner: ${ownerName}${location ? `\nLocation: ${location}` : ""}${lead.notes ? `\nContext: ${lead.notes}` : ""}
+Owner: ${ownerName}${location ? `\nLocation: ${location}` : ""}
 
-Our product catalog — pick the 4 that genuinely fit this business, not the most popular ones:
+${relationshipContext || (lead.notes ? `Context: ${lead.notes}` : "")}
+
+Our product catalog — pick the 4 that genuinely fit this business. If they already buy from us, pick ONLY what they don't have yet:
 ${catalogText}
 
 Respond ONLY with valid JSON, no markdown, no text outside the JSON:

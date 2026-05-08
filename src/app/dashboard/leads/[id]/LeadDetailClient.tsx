@@ -46,8 +46,9 @@ const ACTIVITY_ICONS: Record<string, string> = {
 
 interface ResearchResult {
   businessProfile: string; socialMedia: string; menuInsights: string;
-  seasonalOpportunities: string; recommendedProducts: string; recipeIdeas: string;
-  areaInsights: string; pitchAngles: string; quickLinks: string[]; summary: string;
+  seasonalOpportunities: string; recommendedProducts: string; crossSellUpsell: string;
+  recipeIdeas: string; areaInsights: string; engagementStrategy: string;
+  quickLinks: string[]; summary: string;
 }
 interface Lead {
   id: string; businessName: string; ownerName?: string | null; phone?: string | null; email?: string | null;
@@ -431,9 +432,9 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
                       ["🏢", "Business profile & customer base"],
                       ["📱", "Social media & online presence"],
                       ["🍽️", "Menu insights & what fits"],
-                      ["📦", "Recommended TTP products"],
+                      ["📦", "Products to recommend or cross-sell"],
                       ["🧑‍🍳", "Recipe ideas to pitch"],
-                      ["🎯", "3 tailored sales angles"],
+                      ["💡", "How to open the conversation"],
                     ].map(([icon, label]) => (
                       <div key={label} className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 text-slate-600">
                         <span>{icon}</span>{label}
@@ -460,15 +461,21 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
                       <p className="text-sm text-indigo-900 leading-relaxed">{research.summary}</p>
                     </div>
                   )}
+                  {research.engagementStrategy && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl px-5 py-4">
+                      <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">💡 How to Open the Conversation</p>
+                      <p className="text-sm text-amber-900 leading-relaxed">{research.engagementStrategy}</p>
+                    </div>
+                  )}
                   <div className="grid sm:grid-cols-2 gap-3">
                     <ResearchSection icon="🏢" title="Business Profile"        content={research.businessProfile} />
                     <ResearchSection icon="📱" title="Social Media"            content={research.socialMedia} />
                     <ResearchSection icon="🍽️" title="Menu Insights"           content={research.menuInsights} />
                     <ResearchSection icon="🌤️" title="Seasonal Opportunities"  content={research.seasonalOpportunities} />
                     <ResearchSection icon="📦" title="Recommended Products"    content={research.recommendedProducts} />
+                    <ResearchSection icon="🔁" title="Cross-sell / Upsell Path" content={research.crossSellUpsell} />
                     <ResearchSection icon="🧑‍🍳" title="Recipe Ideas"           content={research.recipeIdeas} />
                     <ResearchSection icon="🏙️" title="Area Insights"           content={research.areaInsights} />
-                    <ResearchSection icon="🎯" title="Pitch Angles"            content={research.pitchAngles} />
                   </div>
                   {research.quickLinks?.length > 0 && (
                     <div>
