@@ -11,4 +11,19 @@
   body {
     @apply bg-white text-slate-900 antialiased;
   }
+
+  /* Allow env() safe area insets on iOS */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+@layer utilities {
+  /* iOS safe area bottom padding — used by MobileNav */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

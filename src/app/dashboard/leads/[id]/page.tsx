@@ -42,13 +42,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       : rawPermissions;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 64px)" }}>
       <Header title={lead.businessName} subtitle={lead.city ?? undefined}>
         <Link href="/dashboard/leads" className="text-sm text-slate-500 hover:text-slate-700">
           ← Back to Leads
         </Link>
       </Header>
-      <div className="flex-1 overflow-hidden lg:overflow-hidden overflow-y-auto">
+      <div className="flex-1 flex overflow-hidden">
         <LeadDetailClient
           lead={JSON.parse(JSON.stringify(lead))}
           isAdmin={isAdmin}

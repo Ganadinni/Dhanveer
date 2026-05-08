@@ -251,7 +251,7 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   const tierIcon  = leadScore?.tier === "HOT" ? "🔥" : leadScore?.tier === "WARM" ? "☀️" : "❄️";
 
   return (
-    <div className="flex flex-col lg:flex-row h-full">
+    <div className="flex flex-col lg:flex-row flex-1 min-h-0">
 
       {/* ── LEFT PANEL — Lead card ─────────────────────────────────────────────── */}
       <div className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white flex flex-col overflow-y-auto max-h-[45vh] lg:max-h-none">

@@ -27,7 +27,7 @@ export default async function LeadsPage() {
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div>
       <Header title="Leads" subtitle={`${leads.length} ${isAdmin ? "total" : "assigned"} leads`}>
         <Link
           href="/dashboard/leads/import-csv"
@@ -51,7 +51,7 @@ export default async function LeadsPage() {
         </Link>
       </Header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="p-4 md:p-6">
         {leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <p className="text-4xl mb-3">👥</p>

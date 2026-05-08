@@ -37,10 +37,8 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="p-4 md:p-6 space-y-6">
       <Header title="Dashboard" subtitle="Your sales overview — The Tea Planet" />
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s) => (
             <StatsCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
@@ -96,7 +94,6 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }

@@ -4,14 +4,18 @@ import { SalesChat } from "@/components/SalesChat";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-slate-50">
-      {/* Sidebar — visible on lg+ only */}
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+      {/* Sidebar — desktop only */}
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        {/* Extra bottom padding on mobile so content clears the bottom nav bar */}
-        <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">{children}</main>
+
+      {/* Content area — scrolls independently */}
+      <div className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
+        {/* pb-16 reserves space above the fixed mobile nav; removed on lg+ */}
+        <main className="flex-1 overflow-y-auto overscroll-contain pb-16 lg:pb-0">
+          {children}
+        </main>
       </div>
-      {/* Bottom nav — visible on mobile only */}
+
       <MobileNav />
       <SalesChat />
     </div>
