@@ -8,24 +8,54 @@ export const maxDuration = 300;
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const config = await db.discoverySearch.findUnique({ where: { id } });
   if (!config) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const results = await runDiscovery(config.query, config.cities, config.tagsToApply);
-
-  await db.discoverySearch.update({
-    where: { id },
+  // Log the run immediately — result saved in DB even if client navigates away
+  const run = await db.discoveryRun.create({
     data: {
-      lastRunAt: new Date(),
-      lastFoundCount: results.added,
-      totalAdded: { increment: results.added },
+      searchId:    id,
+      searchLabel: config.label,
+      searchType:  "MAPS",
+      status:      "RUNNING",
+      runBy:       session.name ?? session.email,
     },
   });
 
-  return NextResponse.json(results);
+  try {
+    const results = await runDiscovery(config.query, config.cities, config.tagsToApply);
+
+    await Promise.all([
+      db.discoverySearch.update({
+        where: { id },
+        data: {
+          lastRunAt:      new Date(),
+          lastFoundCount: results.added,
+          totalAdded:     { increment: results.added },
+        },
+      }),
+      db.discoveryRun.update({
+        where: { id: run.id },
+        data: {
+          status:      "COMPLETED",
+          added:       results.added,
+          skipped:     results.skipped,
+          errors:      results.errors ?? [],
+          completedAt: new Date(),
+        },
+      }),
+    ]);
+
+    return NextResponse.json({ runId: run.id, ...results });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await db.discoveryRun.update({
+      where: { id: run.id },
+      data: { status: "FAILED", errors: [msg], completedAt: new Date() },
+    });
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

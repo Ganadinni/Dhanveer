@@ -47,6 +47,107 @@ interface SocialMonitor {
 
 interface RunResult { added: number; skipped: number; errors: string[]; }
 
+interface DiscoveryRunLog {
+  id: string; searchLabel: string; searchType: string; status: string;
+  added: number; skipped: number; errors: string[];
+  startedAt: string; completedAt: string | null; runBy: string | null;
+}
+
+// ── Run log panel (polls while any run is RUNNING) ─────────────────────────────
+
+function RunsPanel() {
+  const [runs, setRuns] = useState<DiscoveryRunLog[]>([]);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function poll() {
+      try {
+        const res = await fetch("/api/admin/discover/runs");
+        if (!res.ok || !active) return;
+        const data = await res.json();
+        if (Array.isArray(data)) setRuns(data);
+        // Keep polling if any run is still RUNNING
+        if (data.some((r: DiscoveryRunLog) => r.status === "RUNNING")) {
+          setTimeout(poll, 4000);
+        }
+      } catch { /* ignore */ }
+    }
+    poll();
+    return () => { active = false; };
+  }, []);
+
+  // Re-poll when a new run starts
+  useEffect(() => {
+    const hasRunning = runs.some((r) => r.status === "RUNNING");
+    if (!hasRunning) return;
+    const t = setTimeout(async () => {
+      const res = await fetch("/api/admin/discover/runs").catch(() => null);
+      if (res?.ok) { const d = await res.json(); if (Array.isArray(d)) setRuns(d); }
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [runs]);
+
+  if (runs.length === 0) return null;
+
+  const activeRun = runs.find((r) => r.status === "RUNNING");
+  const visible = expanded ? runs : runs.slice(0, 5);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center gap-2">
+          {activeRun ? (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Search running in background — you can work on other things
+            </span>
+          ) : (
+            <span className="text-xs font-semibold text-slate-600">Recent Runs</span>
+          )}
+        </div>
+        <button onClick={() => setExpanded(v => !v)} className="text-xs text-slate-400 hover:text-slate-600">
+          {expanded ? "Show less" : `All ${runs.length}`}
+        </button>
+      </div>
+      <div className="divide-y divide-slate-50">
+        {visible.map((run) => {
+          const dur = run.completedAt
+            ? Math.round((new Date(run.completedAt).getTime() - new Date(run.startedAt).getTime()) / 1000)
+            : null;
+          return (
+            <div key={run.id} className="flex items-center gap-3 px-4 py-2.5">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${
+                run.status === "RUNNING"   ? "bg-amber-400 animate-pulse" :
+                run.status === "COMPLETED" ? "bg-green-500" : "bg-red-400"
+              }`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-slate-800 truncate">{run.searchLabel}</p>
+                <p className="text-[10px] text-slate-400">
+                  {run.status === "RUNNING" ? "Running…" : (
+                    <>
+                      {run.status === "COMPLETED"
+                        ? <span className="text-green-600 font-medium">+{run.added} leads</span>
+                        : <span className="text-red-500">Failed</span>
+                      }
+                      {run.skipped > 0 && <span> · {run.skipped} skipped</span>}
+                      {dur !== null && <span> · {dur}s</span>}
+                      {" · "}{new Date(run.startedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    </>
+                  )}
+                </p>
+              </div>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                run.searchType === "MAPS" ? "bg-blue-50 text-blue-600" : "bg-pink-50 text-pink-600"
+              }`}>{run.searchType}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export function DiscoverClient({
@@ -57,9 +158,12 @@ export function DiscoverClient({
   const [tab, setTab] = useState<"maps" | "social">("maps");
 
   return (
-    <div className="max-w-4xl space-y-0">
+    <div className="max-w-4xl space-y-5">
+      {/* Live run log — always visible, polls automatically */}
+      <RunsPanel />
+
       {/* Tab switcher */}
-      <div className="flex border-b border-slate-200 mb-6">
+      <div className="flex border-b border-slate-200">
         <TabBtn active={tab === "maps"}   onClick={() => setTab("maps")}   icon="🗺️" label="Google Maps" />
         <TabBtn active={tab === "social"} onClick={() => setTab("social")} icon="📡" label="Social Media" />
       </div>
@@ -145,18 +249,23 @@ function MapsTab({ isConfigured }: { isConfigured: boolean }) {
   async function handleRun(s: DiscoverySearch) {
     setRunning(s.id);
     setRunResults((prev) => { const n = { ...prev }; delete n[s.id]; return n; });
-    const res = await fetch(`/api/admin/discover/${s.id}/run`, { method: "POST" });
-    const result = await res.json();
-    setRunning(null);
-    if (res.ok) {
-      setRunResults((prev) => ({ ...prev, [s.id]: result }));
-      setSearches((prev) => prev.map((x) => x.id === s.id
-        ? { ...x, lastRunAt: new Date().toISOString(), lastFoundCount: result.added, totalAdded: x.totalAdded + result.added }
-        : x
-      ));
-    } else {
-      setRunResults((prev) => ({ ...prev, [s.id]: { added: 0, skipped: 0, errors: [result.error ?? "Unknown error"] } }));
-    }
+    // keepalive keeps the request alive even if the user navigates away
+    fetch(`/api/admin/discover/${s.id}/run`, { method: "POST", keepalive: true })
+      .then((res) => res.json())
+      .then((result) => {
+        setRunning(null);
+        if (result.added !== undefined) {
+          setRunResults((prev) => ({ ...prev, [s.id]: result }));
+          setSearches((prev) => prev.map((x) => x.id === s.id
+            ? { ...x, lastRunAt: new Date().toISOString(), lastFoundCount: result.added, totalAdded: x.totalAdded + result.added }
+            : x
+          ));
+        } else {
+          setRunResults((prev) => ({ ...prev, [s.id]: { added: 0, skipped: 0, errors: [result.error ?? "Unknown error"] } }));
+        }
+      })
+      .catch(() => setRunning(null));
+    // UI is immediately available — run log panel shows live status
   }
 
   return (
@@ -305,16 +414,19 @@ function SocialTab({ hasSerper, hasAI }: { hasSerper: boolean; hasAI: boolean })
   async function handleRun(m: SocialMonitor) {
     setRunning(m.id);
     setRunResults((prev) => { const n = { ...prev }; delete n[m.id]; return n; });
-    const res = await fetch(`/api/admin/social-monitor/${m.id}/run`, { method: "POST" });
-    const result = await res.json();
-    setRunning(null);
-    setRunResults((prev) => ({ ...prev, [m.id]: result }));
-    if (res.ok) {
-      setMonitors((prev) => prev.map((x) => x.id === m.id
-        ? { ...x, lastRunAt: new Date().toISOString(), lastFoundCount: result.added, totalAdded: x.totalAdded + result.added }
-        : x
-      ));
-    }
+    fetch(`/api/admin/social-monitor/${m.id}/run`, { method: "POST", keepalive: true })
+      .then((res) => res.json())
+      .then((result) => {
+        setRunning(null);
+        setRunResults((prev) => ({ ...prev, [m.id]: result }));
+        if (result.added !== undefined) {
+          setMonitors((prev) => prev.map((x) => x.id === m.id
+            ? { ...x, lastRunAt: new Date().toISOString(), lastFoundCount: result.added, totalAdded: x.totalAdded + result.added }
+            : x
+          ));
+        }
+      })
+      .catch(() => setRunning(null));
   }
 
   return (

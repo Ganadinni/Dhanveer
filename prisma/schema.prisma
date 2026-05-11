@@ -256,6 +256,28 @@ model SocialMonitor {
   @@map("social_monitors")
 }
 
+// ─── Discovery Run Log ────────────────────────────────────────────────────────
+
+model DiscoveryRun {
+  id          String    @id @default(cuid())
+  searchId    String?   // set for Maps runs
+  monitorId   String?   // set for Social runs
+  searchLabel String
+  searchType  String    // "MAPS" | "SOCIAL"
+  status      String    @default("RUNNING") // RUNNING | COMPLETED | FAILED
+  added       Int       @default(0)
+  skipped     Int       @default(0)
+  errors      String[]  @default([])
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  runBy       String?
+
+  @@index([searchId])
+  @@index([monitorId])
+  @@index([startedAt])
+  @@map("discovery_runs")
+}
+
 // ─── WhatsApp Sequences ───────────────────────────────────────────────────────
 
 model WhatsAppSequence {
