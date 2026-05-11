@@ -4,9 +4,9 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback } from "react";
 
 const SORT_OPTIONS = [
-  { value: "newest",  label: "Newest first" },
-  { value: "city",    label: "City A–Z" },
-  { value: "name",    label: "Name A–Z" },
+  { value: "city-grouped", label: "City (grouped)" },
+  { value: "newest",       label: "Newest first" },
+  { value: "name",         label: "Name A–Z" },
 ];
 
 const TAG_COLORS: Record<string, string> = {
