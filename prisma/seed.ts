@@ -8,10 +8,10 @@ async function main() {
   const hash = await bcrypt.hash("admin123", 12);
   const admin = await db.user.upsert({
     where: { email: "admin@theteaplanet.com" },
-    update: { role: "ADMIN", passwordHash: hash, name: "Admin" },
-    create: { email: "admin@theteaplanet.com", name: "Admin", role: "ADMIN", passwordHash: hash },
+    update: { role: "SUPER_ADMIN", status: "ACTIVE", passwordHash: hash, name: "Admin" },
+    create: { email: "admin@theteaplanet.com", name: "Admin", role: "SUPER_ADMIN", status: "ACTIVE", passwordHash: hash },
   });
-  console.log("Seeded admin:", admin.email, "role:", admin.role);
+  console.log("Seeded super admin:", admin.email, "role:", admin.role);
 
   // ── Product Knowledge Base ──────────────────────────────────────────────────
   const categories = [

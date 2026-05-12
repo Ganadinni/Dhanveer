@@ -11,6 +11,7 @@ export interface SessionUser {
   email: string;
   name: string;
   role: string;
+  status: string;
 }
 
 export async function createSession(user: SessionUser) {

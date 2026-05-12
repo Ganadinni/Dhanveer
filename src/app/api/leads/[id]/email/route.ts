@@ -8,8 +8,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!(await userHasPermission(session.id, session.role, "send_email"))) {
-    return NextResponse.json({ error: "You don't have access to Send Email. Ask your admin to enable it." }, { status: 403 });
+  if (!(await userHasPermission(session.id, session.role, "dhanveer_access"))) {
+    return NextResponse.json({ error: "You don't have access to this feature. Ask your admin to enable Dhanveer access." }, { status: 403 });
   }
 
   const { id } = await params;

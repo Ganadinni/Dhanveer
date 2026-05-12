@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/session";
 import { db } from "@/lib/db";
+import { getEffectivePermissions } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -10,16 +11,11 @@ export async function GET() {
 
   const user = await db.user.findUnique({
     where: { id: session.id },
-    select: { id: true, name: true, email: true, role: true, permissions: true },
+    select: { id: true, name: true, email: true, role: true, status: true, permissions: true },
   });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // ADMIN implicitly has all features
-  const effectivePermissions = user.role === "ADMIN"
-    ? ["ai_pitch", "deep_research", "whatsapp", "send_email", "manage_leads", "delete_leads"]
-    : user.role === "SALES"
-      ? [...new Set([...user.permissions, "manage_leads"])]
-      : user.permissions;
+  const effectivePermissions = getEffectivePermissions(user.role, user.permissions);
 
   return NextResponse.json({ ...user, permissions: effectivePermissions });
 }

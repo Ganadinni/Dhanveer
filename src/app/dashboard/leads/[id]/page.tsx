@@ -6,11 +6,12 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import Link from "next/link";
 import { LeadDetailClient } from "./LeadDetailClient";
+import { getEffectivePermissions, isAdminRole } from "@/lib/permissions";
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
-  const isAdmin = session?.role === "ADMIN";
+  const isAdmin = isAdminRole(session?.role ?? "");
 
   const [lead, users, currentUser] = await Promise.all([
     db.lead.findUnique({
@@ -32,14 +33,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   if (!lead) notFound();
 
-  // Compute effective permissions (same logic as /api/me)
-  const rawPermissions = currentUser?.permissions ?? [];
   const role = currentUser?.role ?? session?.role ?? "VIEWER";
-  const userPermissions: string[] = isAdmin
-    ? ["ai_pitch", "deep_research", "whatsapp", "send_email", "manage_leads", "delete_leads"]
-    : role === "SALES"
-      ? [...new Set([...rawPermissions, "manage_leads"])]
-      : rawPermissions;
+  const userPermissions = getEffectivePermissions(role, currentUser?.permissions ?? []);
 
   return (
     <div className="flex flex-col" style={{ minHeight: "calc(100vh - 64px)" }}>

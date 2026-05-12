@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!(await userHasPermission(session.id, session.role, "whatsapp"))) {
-    return NextResponse.json({ error: "You don't have access to WhatsApp messaging. Ask your admin to enable it." }, { status: 403 });
+  if (!(await userHasPermission(session.id, session.role, "dhanveer_access"))) {
+    return NextResponse.json({ error: "You don't have access to WhatsApp messaging. Ask your admin to enable Dhanveer access." }, { status: 403 });
   }
 
   const { leadId, to, message } = await req.json();

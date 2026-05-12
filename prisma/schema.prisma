@@ -33,9 +33,19 @@ enum LeadSource {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
+  MANAGER
+  CREATIVE
+  PRODUCT
   SALES
   VIEWER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
 }
 
 enum TaskType {
@@ -49,19 +59,39 @@ enum TaskType {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String     @id @default(cuid())
+  email        String     @unique
   name         String
-  role         UserRole @default(SALES)
+  role         UserRole   @default(SALES)
+  status       UserStatus @default(ACTIVE)
   passwordHash String?
-  permissions  String[] @default([])   // feature flags: ai_pitch, whatsapp, manage_leads, delete_leads
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  permissions  String[]   @default([])
+  lastLogin    DateTime?
+  approvedBy   String?
+  invitedBy    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  leads        Lead[]   @relation("AssignedLeads")
-  tasks        Task[]   @relation("AssignedTasks")
+  leads        Lead[]         @relation("AssignedLeads")
+  tasks        Task[]         @relation("AssignedTasks")
+  auditLogs    UserAuditLog[]
 
   @@map("users")
+}
+
+model UserAuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actorId   String
+  actorName String
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([actorId])
+  @@map("user_audit_logs")
 }
 
 model Lead {

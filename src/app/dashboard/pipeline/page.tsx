@@ -7,7 +7,7 @@ import { PipelineClient } from "./PipelineClient";
 
 export default async function PipelinePage() {
   const session = await auth();
-  const isAdmin = session?.role === "ADMIN";
+  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(session?.role ?? "");
 
   const leads = await db.lead.findMany({
     where: {

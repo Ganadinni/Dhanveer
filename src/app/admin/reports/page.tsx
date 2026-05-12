@@ -16,7 +16,7 @@ export default async function ReportsPage() {
     db.lead.groupBy({ by: ["status"], _count: { id: true } }),
     db.lead.groupBy({ by: ["source"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),
     db.user.findMany({
-      where: { role: { in: ["ADMIN", "SALES"] } },
+      where: { role: { in: ["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES"] } },
       select: { id: true, name: true, leads: { select: { status: true } } },
       orderBy: { name: "asc" },
     }),

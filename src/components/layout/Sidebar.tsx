@@ -4,28 +4,40 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const navItems = [
-  { href: "/dashboard",          label: "Dashboard",        icon: "📊", exact: true },
-  { href: "/dashboard/leads",    label: "Leads",            icon: "👥" },
-  { href: "/admin/discover",     label: "Discover Leads",   icon: "🔍" },
-  { href: "/dashboard/pipeline", label: "Pipeline",         icon: "📈" },
-  { href: "/dashboard/tasks",    label: "Tasks",            icon: "✅" },
-  { href: "/admin/reports",      label: "Reports",          icon: "📋" },
-  { href: "/admin/sequences",     label: "WA Sequences",     icon: "📲" },
-  { href: "/admin/knowledge",    label: "Product Knowledge",icon: "📦" },
-  { href: "/admin/users",        label: "Users",            icon: "👤" },
-  { href: "/admin/settings",     label: "Integrations",     icon: "🔌" },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+  exact?: boolean;
+  permission: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/dashboard",          label: "Dashboard",         icon: "📊", exact: true, permission: "dashboard_view" },
+  { href: "/dashboard/leads",    label: "Leads",             icon: "👥",              permission: "dhanveer_access" },
+  { href: "/admin/discover",     label: "Discover Leads",    icon: "🔍",              permission: "dhanveer_access" },
+  { href: "/dashboard/pipeline", label: "Pipeline",          icon: "📈",              permission: "dhanveer_access" },
+  { href: "/dashboard/tasks",    label: "Tasks",             icon: "✅",              permission: "dhanveer_access" },
+  { href: "/admin/reports",      label: "Reports",           icon: "📋",              permission: "dashboard_view" },
+  { href: "/admin/sequences",    label: "WA Sequences",      icon: "📲",              permission: "dhanveer_access" },
+  { href: "/admin/knowledge",    label: "Product Knowledge", icon: "📦",              permission: "products_view" },
+  { href: "/admin/users",        label: "Users",             icon: "👤",              permission: "user_management" },
+  { href: "/admin/settings",     label: "Integrations",      icon: "🔌",              permission: "settings" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<string[] | null>(null);
 
   useEffect(() => {
     fetch("/api/me")
       .then((r) => r.json())
-      .then((d) => { if (d.name) setName(d.name); })
+      .then((d) => {
+        if (d.name) setName(d.name);
+        if (d.permissions) setPermissions(d.permissions);
+      })
       .catch(() => {});
   }, []);
 
@@ -34,7 +46,11 @@ export function Sidebar() {
     router.push("/login");
   }
 
-  function NavLink({ href, label, icon, exact = false }: { href: string; label: string; icon: string; exact?: boolean }) {
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => permissions === null || permissions.includes(item.permission)
+  );
+
+  function NavLink({ href, label, icon, exact = false }: NavItem) {
     const active = exact ? pathname === href : pathname.startsWith(href);
     return (
       <li>
@@ -67,7 +83,7 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-0.5">
-          {navItems.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </ul>

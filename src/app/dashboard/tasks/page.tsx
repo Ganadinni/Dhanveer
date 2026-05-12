@@ -7,7 +7,7 @@ import { TasksClient } from "./TasksClient";
 
 export default async function TasksPage() {
   const session = await auth();
-  const isAdmin = session?.role === "ADMIN";
+  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(session?.role ?? "");
 
   const tasks = await db.task.findMany({
     where: {

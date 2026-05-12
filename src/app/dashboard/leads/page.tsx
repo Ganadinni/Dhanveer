@@ -48,7 +48,7 @@ export default async function LeadsPage({
   searchParams: Promise<{ sort?: string; tag?: string }>;
 }) {
   const session   = await auth();
-  const isAdmin   = session?.role === "ADMIN";
+  const isAdmin   = ["SUPER_ADMIN", "ADMIN"].includes(session?.role ?? "");
   const sp        = await searchParams;
   const sort      = (sp.sort ?? "city-grouped") as SortKey;
   const tagFilter = sp.tag ?? "";

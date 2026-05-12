@@ -87,12 +87,13 @@ export function LeadDetailClient({ lead, isAdmin = false, users = [], userPermis
   lead: Lead; isAdmin?: boolean; users?: UserOption[]; userPermissions?: string[];
 }) {
   const router = useRouter();
-  const canUseAIPitch  = userPermissions.includes("ai_pitch");
-  const canResearch    = userPermissions.includes("deep_research");
-  const canUseWhatsApp = userPermissions.includes("whatsapp");
-  const canSendEmail   = userPermissions.includes("send_email");
-  const canDeleteLeads = isAdmin || userPermissions.includes("delete_leads");
-  const canManageLeads = isAdmin || userPermissions.includes("manage_leads");
+  const hasDhanveer    = isAdmin || userPermissions.includes("dhanveer_access");
+  const canUseAIPitch  = hasDhanveer;
+  const canResearch    = hasDhanveer;
+  const canUseWhatsApp = hasDhanveer;
+  const canSendEmail   = hasDhanveer;
+  const canDeleteLeads = isAdmin;
+  const canManageLeads = hasDhanveer;
 
   const [activeTab, setActiveTab]         = useState<TabKey>("intelligence");
   const [status, setStatus]               = useState(lead.status);
