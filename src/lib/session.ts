@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 const COOKIE = "dv_session";
 const secret = new TextEncoder().encode(
@@ -31,7 +32,7 @@ export async function createSession(user: SessionUser) {
   });
 }
 
-export async function getSession(): Promise<SessionUser | null> {
+export const getSession = cache(async function (): Promise<SessionUser | null> {
   try {
     const jar = await cookies();
     const token = jar.get(COOKIE)?.value;
@@ -41,7 +42,7 @@ export async function getSession(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
-}
+});
 
 export async function deleteSession() {
   const jar = await cookies();

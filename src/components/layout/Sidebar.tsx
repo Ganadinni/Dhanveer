@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 interface NavItem {
   href: string;
@@ -25,30 +24,21 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/settings",     label: "Integrations",      icon: "🔌",              permission: "settings" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  userName: string;
+  permissions: string[];
+}
+
+export function Sidebar({ userName, permissions }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [name, setName] = useState<string | null>(null);
-  const [permissions, setPermissions] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.name) setName(d.name);
-        if (d.permissions) setPermissions(d.permissions);
-      })
-      .catch(() => {});
-  }, []);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   }
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => permissions === null || permissions.includes(item.permission)
-  );
+  const visibleItems = NAV_ITEMS.filter((item) => permissions.includes(item.permission));
 
   function NavLink({ href, label, icon, exact = false }: NavItem) {
     const active = exact ? pathname === href : pathname.startsWith(href);
@@ -91,7 +81,7 @@ export function Sidebar() {
 
       <div className="border-t border-slate-100 px-4 py-3 flex items-center justify-between">
         <div>
-          {name && <p className="text-xs font-medium text-slate-600 truncate max-w-[110px]">{name}</p>}
+          {userName && <p className="text-xs font-medium text-slate-600 truncate max-w-[110px]">{userName}</p>}
           <p className="text-xs text-slate-400">The Tea Planet CRM</p>
         </div>
         <button
