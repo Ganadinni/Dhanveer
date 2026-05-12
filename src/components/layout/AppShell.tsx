@@ -22,7 +22,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <MobileNav />
+      <MobileNav permissions={user?.effectivePermissions ?? []} />
       <SalesChat />
     </div>
   );
